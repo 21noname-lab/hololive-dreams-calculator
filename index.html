@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="編成とライブ条件からホロライブドリームスのイベントポイントを計算します。">
+  <meta name="theme-color" content="#17699b">
+  <title>ホロライブドリームス ポイント計算機</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="light">
+  <header class="site-header">
+    <div class="header-copy">
+      <h1>ホロライブドリームス ポイント計算機</h1>
+      <p>条件設定をして、おおよそのポイントを計算します</p>
+    </div>
+    <label class="theme-control" for="theme-mode">
+      <span>表示モード</span>
+      <select id="theme-mode" aria-label="表示モード">
+        <option value="light">ライトモード</option>
+        <option value="dark">ダークモード</option>
+      </select>
+    </label>
+  </header>
+
+  <main class="calculator">
+    <p id="storage-error" class="storage-error" role="alert" hidden></p>
+
+    <fieldset class="event-settings">
+      <legend>イベント選択</legend>
+      <div class="event-controls">
+        <label class="event-type-control" for="event-mode">
+          イベント種類
+          <select id="event-mode">
+            <option value="rally">ポイントラリー</option>
+            <option value="spotlight">スポットライト</option>
+          </select>
+        </label>
+      </div>
+    </fieldset>
+
+    <fieldset class="team-settings">
+      <legend>カード一覧</legend>
+      <div class="card-list-summary">
+        <div class="formation-summary" aria-live="polite">
+          <span>5人分の特攻倍率</span>
+          <strong id="formation-bonus">0%</strong>
+        </div>
+      </div>
+      <div id="character-list" class="character-grid"></div>
+    </fieldset>
+
+    <fieldset class="live-settings">
+      <legend>ライブ設定</legend>
+      <div class="live-format form-field">
+        <label for="live-mode">ライブ形式</label>
+        <select id="live-mode">
+          <option value="solo">ソロ</option>
+          <option value="multi" selected>マルチ</option>
+        </select>
+      </div>
+
+      <div class="score-settings-group">
+        <label for="unit-score">
+          リザルトスコア
+          <input id="unit-score" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
+          <span class="field-help">おおよそのリザルトスコアを入力してください</span>
+        </label>
+        <div id="multi-score-field" class="multi-score-group" hidden>
+          <label for="multi-score">
+            全体スコア
+            <input id="multi-score" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
+            <span class="field-help">おおよその全体スコアを記入してください</span>
+          </label>
+          <button id="reset-settings" class="reset-button" type="button">入力内容をリセット</button>
+        </div>
+      </div>
+
+      <div class="bonus-settings-group">
+        <label for="song-rate">
+          曲長ボーナス
+          <select id="song-rate"></select>
+        </label>
+        <label for="boost-count">
+          ブースト数
+          <select id="boost-count">
+            <option value="0">0炊き</option>
+            <option value="1" selected>1炊き</option>
+            <option value="2">2炊き</option>
+            <option value="3">3炊き</option>
+            <option value="5">5炊き</option>
+            <option value="10">10炊き</option>
+          </select>
+        </label>
+        <label for="holopass">
+          ホロパスポート
+          <select id="holopass">
+            <option value="1">なし</option>
+            <option value="2" selected>あり</option>
+          </select>
+        </label>
+        <p class="field-help bonus-note">曲長ボーナスと炊き数を合わせてください</p>
+      </div>
+    </fieldset>
+
+    <fieldset class="calculation-settings">
+      <legend>イベントポイント計算</legend>
+      <output id="point-result" hidden>—</output>
+      <div class="range-results" aria-label="ポイント予測">
+        <h3>ポイント予測</h3>
+        <div class="range-results-grid">
+          <div class="range-result">
+            <span>手動下振れ</span>
+            <strong><output id="manual-low-result">—</output><small> pt</small></strong>
+          </div>
+          <div class="range-result">
+            <span>手動上振れ</span>
+            <strong><output id="manual-high-result">—</output><small> pt</small></strong>
+          </div>
+          <div class="range-result">
+            <span>オート上振れ</span>
+            <strong><output id="auto-high-result">—</output><small> pt</small></strong>
+          </div>
+          <div class="range-result">
+            <span>オート下振れ</span>
+            <strong><output id="auto-low-result">—</output><small> pt</small></strong>
+          </div>
+        </div>
+      </div>
+      <p id="point-error" class="point-error" role="alert"></p>
+    </fieldset>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
