@@ -180,17 +180,16 @@ function calculateEventPoints({ liveMode, unitScore, multiScore, scoreCorrection
 }
 
 function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorrection, bonus, passMultiplier, songRate, boostRate }) {
-  const multiScoreTerm = liveMode === "solo" ? 0 : multiScore / scoreCorrection;
-  const multiplier = boostRate * (1 + songRate) * (1 + bonus / 100) * passMultiplier;
-  const ceilWithPrecision = (value) => {
-    const nearestInteger = Math.round(value);
-    // Ignore only a few ULPs of drift before applying the normal ceiling.
-    const tolerance = Number.EPSILON * Math.max(1, Math.abs(value)) * 4;
-    return Math.abs(value - nearestInteger) <= tolerance ? nearestInteger : Math.ceil(value);
-  };
-  const calculateScenario = (unitScoreMultiplier) => ceilWithPrecision(
-    (120 + (unitScore * unitScoreMultiplier) / 15000 + multiScoreTerm) * multiplier
-  );
+  const calculateScenario = (unitScoreMultiplier) => calculateEventPoints({
+    liveMode,
+    unitScore: unitScore * unitScoreMultiplier,
+    multiScore,
+    scoreCorrection,
+    bonus,
+    passMultiplier,
+    songRate,
+    boostRate
+  });
 
   return {
     manualLow: calculateScenario(1.2),
