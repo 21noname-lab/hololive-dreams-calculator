@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="編成とライブ条件からイベントポイントを計算します。&#10;※URL共有はホロドリ公式鯖のみでお願いいたします。">
+  <meta property="og:title" content="ホロライブドリームス ポイント計算機">
   <meta property="og:description" content="編成とライブ条件からイベントポイントを計算します。&#10;※URL共有はホロドリ公式鯖のみでお願いいたします。">
   <meta name="theme-color" content="#17699b">
   <title>ホロライブドリームス ポイント計算機</title>
@@ -78,6 +79,11 @@
       </div>
 
       <div class="bonus-settings-group">
+        <label for="bonus-percent">
+          獲得ボーナス
+          <input id="bonus-percent" type="text" inputmode="numeric" pattern="[0-9]*" value="" autocomplete="off">
+          <span class="field-help">カード一覧とは別に整数％で入力してください。空欄は0%として扱います</span>
+        </label>
         <label for="song-rate">
           曲長ボーナス
           <select id="song-rate"></select>

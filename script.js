@@ -202,6 +202,10 @@ function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorre
 function validateLiveInputs(liveMode) {
   const unitScore = getSafeNumber("#unit-score");
   const multiScore = getSafeNumber("#multi-score");
+  const bonusInput = document.querySelector("#bonus-percent");
+  const bonusPercent = bonusInput && bonusInput.value.trim() === ""
+    ? 0
+    : getSafeNumber("#bonus-percent");
   const songRatePercent = getSafeNumber("#song-rate");
   const boostCount = getSafeNumber("#boost-count");
   const boostRate = BOOST_MULTIPLIERS[boostCount];
@@ -209,6 +213,9 @@ function validateLiveInputs(liveMode) {
   if (unitScore === null || unitScore < 0) return { error: "リザルトスコアを0以上で入力してください。" };
   if (liveMode === "multi" && (multiScore === null || multiScore < 0)) {
     return { error: "全体スコアを0以上で入力してください。" };
+  }
+  if (bonusPercent === null || bonusPercent < 0) {
+    return { error: "獲得ボーナスを0以上で入力してください。" };
   }
   if (songRatePercent === null || songRatePercent < 14 || songRatePercent > 54) {
     return { error: "曲長ボーナスを選択してください。" };
@@ -220,6 +227,7 @@ function validateLiveInputs(liveMode) {
   return {
     unitScore,
     multiScore: multiScore ?? 0,
+    bonusPercent,
     songRate: songRatePercent / 100,
     boostRate
   };
@@ -238,8 +246,8 @@ function updateCalculator() {
   const mode = eventSetting.rateTable;
   const liveMode = document.querySelector("#live-mode").value;
   normalizeCharacterStatuses(eventType);
-  const bonus = calculateFormationBonus(mode, getCharacterSettings());
-  document.querySelector("#formation-bonus").textContent = `${bonus}%`;
+  const formationBonus = calculateFormationBonus(mode, getCharacterSettings());
+  document.querySelector("#formation-bonus").textContent = `${formationBonus}%`;
   updateLiveDisplay(liveMode);
 
   const values = validateLiveInputs(liveMode);
@@ -262,7 +270,7 @@ function updateCalculator() {
     unitScore: values.unitScore,
     multiScore: values.multiScore,
     scoreCorrection: eventSetting.scoreCorrection,
-    bonus,
+    bonus: values.bonusPercent,
     passMultiplier,
     songRate: values.songRate,
     boostRate: values.boostRate
@@ -274,7 +282,7 @@ function updateCalculator() {
     unitScore: values.unitScore,
     multiScore: values.multiScore,
     scoreCorrection: eventSetting.scoreCorrection,
-    bonus,
+    bonus: values.bonusPercent,
     passMultiplier,
     songRate: values.songRate,
     boostRate: values.boostRate
@@ -334,7 +342,7 @@ function restoreSettings() {
   });
   updateCharacterStatusOptions(document.querySelector("#event-mode").value);
 
-  ["unit-score", "multi-score"].forEach((id) => {
+  ["unit-score", "multi-score", "bonus-percent"].forEach((id) => {
     const input = document.querySelector(`#${id}`);
     if (input && typeof saved[id] === "string") input.value = saved[id];
   });
@@ -363,6 +371,7 @@ function saveSettings() {
     "live-mode": document.querySelector("#live-mode").value,
     "unit-score": document.querySelector("#unit-score").value,
     "multi-score": document.querySelector("#multi-score").value,
+    "bonus-percent": document.querySelector("#bonus-percent").value,
     "song-rate": document.querySelector("#song-rate").value,
     "boost-count": document.querySelector("#boost-count").value,
     holopass: document.querySelector("#holopass").value,
@@ -381,6 +390,7 @@ function saveSettings() {
 function resetSettings() {
   document.querySelector("#unit-score").value = "0";
   document.querySelector("#multi-score").value = "0";
+  document.querySelector("#bonus-percent").value = "";
   updateCalculator();
   saveSettings();
 }
