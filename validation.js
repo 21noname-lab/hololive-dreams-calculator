@@ -449,8 +449,8 @@
       appendPrediction(list, "既存の基礎計算経路", predictions.direct, record.actualPoints);
       appendPrediction(list, "手動下振れ", predictions.scenarios.manualLow, record.actualPoints);
       appendPrediction(list, "手動上振れ", predictions.scenarios.manualHigh, record.actualPoints);
-      appendPrediction(list, "オート下振れ", predictions.scenarios.autoLow, record.actualPoints);
       appendPrediction(list, "オート上振れ（個人スコア1.0倍）", predictions.scenarios.autoHigh, record.actualPoints);
+      appendPrediction(list, "オート下振れ", predictions.scenarios.autoLow, record.actualPoints);
       details.appendChild(list);
     } catch (error) {
       const message = document.createElement("p");
