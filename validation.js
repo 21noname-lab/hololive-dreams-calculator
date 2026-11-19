@@ -16,7 +16,7 @@
 
   const songRateOptions = Array.from({ length: 41 }, (_, index) => {
     const value = index + 14;
-    return `<option value="${value}">${value}%</option>`;
+    return `<option value="${value}"${value === 54 ? " selected" : ""}>${value}%</option>`;
   }).join("");
   const boostOptions = Object.keys(BOOST_MULTIPLIERS)
     .map(Number)
@@ -70,7 +70,7 @@
             ホロパスポート
             <select id="validation-holopass" required>
               <option value="false">なし</option>
-              <option value="true">あり</option>
+              <option value="true" selected>あり</option>
             </select>
           </label>
         </div>
@@ -672,7 +672,9 @@
         holopass: root.querySelector("#validation-holopass").value === "true"
       });
       if (saveRecords(records.concat(record))) {
-        form.reset();
+        root.querySelector("#validation-personal-score").value = "";
+        root.querySelector("#validation-multi-score").value = "";
+        root.querySelector("#validation-actual-points").value = "";
         render();
       }
     } catch (error) {
