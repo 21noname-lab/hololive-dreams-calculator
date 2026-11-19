@@ -65,9 +65,9 @@
 
       <div class="score-settings-group">
         <label for="unit-score">
-          リザルトスコア
+          ユニットスコア
           <input id="unit-score" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
-          <span class="field-help">おおよそのリザルトスコアを入力してください</span>
+          <span class="field-help">ユニットスコアを入力してください</span>
         </label>
         <div id="multi-score-field" class="multi-score-group" hidden>
           <label for="multi-score">
@@ -118,20 +118,12 @@
         <h3>ポイント予測</h3>
         <div class="range-results-grid">
           <div class="range-result">
-            <span>手動下振れ</span>
-            <strong><output id="manual-low-result">—</output><small> pt</small></strong>
+            <span>下振れ</span>
+            <strong><output id="low-result">—</output><small> pt</small></strong>
           </div>
           <div class="range-result">
-            <span>手動上振れ</span>
-            <strong><output id="manual-high-result">—</output><small> pt</small></strong>
-          </div>
-          <div class="range-result">
-            <span>オート下振れ</span>
-            <strong><output id="auto-low-result">—</output><small> pt</small></strong>
-          </div>
-          <div class="range-result">
-            <span>オート上振れ</span>
-            <strong><output id="auto-high-result">—</output><small> pt</small></strong>
+            <span>上振れ</span>
+            <strong><output id="high-result">—</output><small> pt</small></strong>
           </div>
         </div>
       </div>
