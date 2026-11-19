@@ -4,10 +4,14 @@
   const STORAGE_KEY = "hololiveDreamsSpotlightValidationRecords";
   const SCHEMA_VERSION = "1";
   const MIN_ANALYSIS_RECORDS = 5;
+  const EVENT_LABELS = {
+    spotlight: "スポットライト",
+    rally: "ポイントラリー"
+  };
   const root = document.querySelector("#spotlight-validation-root");
 
   if (!root) {
-    throw new Error("Spotlight validation root was not found.");
+    throw new Error("Measured-data validation root was not found.");
   }
 
   const songRateOptions = Array.from({ length: 41 }, (_, index) => {
@@ -22,29 +26,36 @@
 
   root.innerHTML = `
     <fieldset class="spotlight-validation">
-      <legend>スポットライト実測データの検証</legend>
+      <legend>実測データの検証</legend>
       <p class="validation-description">
         実測値を記録し、現在の計算機による予測値との差を比較します。記録はこのブラウザー内に保存されます。
       </p>
       <p class="validation-note">
-        全体スコアはFEVER込みの最終値として記録します。差分は「予測 − 実測」です。
+        マルチスコアはFEVER込みの最終値として記録します。差分は「予測 − 実測」です。
       </p>
+      <label class="validation-event-control" for="validation-event-mode">
+        イベント
+        <select id="validation-event-mode">
+          <option value="spotlight">スポットライト</option>
+          <option value="rally">ポイントラリー</option>
+        </select>
+      </label>
       <form id="validation-record-form">
         <div class="validation-form-grid">
           <label for="validation-personal-score">
-            個人リザルトスコア
+            リザルトスコア
             <input id="validation-personal-score" type="number" min="0" step="1" required>
           </label>
           <label for="validation-multi-score">
-            マルチ全体スコア（FEVER込み）
+            マルチスコア
             <input id="validation-multi-score" type="number" min="0" step="1" required>
           </label>
           <label for="validation-actual-points">
-            実際の獲得Pt
+            獲得pt
             <input id="validation-actual-points" type="number" min="0" step="1" required>
           </label>
           <label for="validation-bonus-percent">
-            特攻倍率（%）
+            獲得ボーナス
             <input id="validation-bonus-percent" type="number" min="0" step="1" required>
           </label>
           <label for="validation-song-rate">
@@ -56,7 +67,7 @@
             <select id="validation-boost-count" required>${boostOptions}</select>
           </label>
           <label for="validation-holopass">
-            ホロパス
+            ホロパスポート
             <select id="validation-holopass" required>
               <option value="false">なし</option>
               <option value="true">あり</option>
@@ -76,6 +87,33 @@
         <button id="validation-import-button" class="validation-secondary-button" type="button">CSVインポート</button>
         <input id="validation-import-file" type="file" accept=".csv,text/csv" hidden>
       </div>
+      <p class="validation-note">
+        .xlsxの列構成を確認できるサンプルがないため、Excelインポートは未対応です。現在はこの画面から出力したCSVを読み込めます。
+      </p>
+      <section id="validation-import-preview" class="validation-import-preview" aria-live="polite" hidden>
+        <h3>インポートプレビュー</h3>
+        <p id="validation-import-summary"></p>
+        <div class="validation-table-wrap">
+          <table class="validation-table">
+            <thead>
+              <tr>
+                <th scope="col">行</th>
+                <th scope="col">イベント</th>
+                <th scope="col">リザルトスコア</th>
+                <th scope="col">マルチスコア</th>
+                <th scope="col">獲得pt</th>
+                <th scope="col">獲得ボーナス</th>
+              </tr>
+            </thead>
+            <tbody id="validation-import-preview-list"></tbody>
+          </table>
+        </div>
+        <ul id="validation-import-errors" class="validation-import-errors"></ul>
+        <div class="validation-file-actions">
+          <button id="validation-import-confirm" class="validation-primary-button" type="button">この内容を追加</button>
+          <button id="validation-import-cancel" class="validation-secondary-button" type="button">キャンセル</button>
+        </div>
+      </section>
 
       <section class="validation-records" aria-labelledby="validation-records-title">
         <h3 id="validation-records-title">実測記録</h3>
@@ -84,11 +122,11 @@
             <thead>
               <tr>
                 <th scope="col">記録日時</th>
-                <th scope="col">個人スコア</th>
-                <th scope="col">全体スコア（FEVER込み）</th>
-                <th scope="col">特攻 / 曲長</th>
-                <th scope="col">ブースト / パス</th>
-                <th scope="col">実測Pt</th>
+                <th scope="col">リザルトスコア</th>
+                <th scope="col">マルチスコア</th>
+                <th scope="col">獲得ボーナス / 曲長</th>
+                <th scope="col">ブースト / ホロパスポート</th>
+                <th scope="col">獲得pt</th>
                 <th scope="col">予測値・差分</th>
                 <th scope="col">操作</th>
               </tr>
@@ -111,8 +149,14 @@
   const recordList = root.querySelector("#validation-record-list");
   const analysisContent = root.querySelector("#validation-analysis-content");
   const importFile = root.querySelector("#validation-import-file");
-  const eventMode = document.querySelector("#event-mode");
+  const validationEventMode = root.querySelector("#validation-event-mode");
+  const importPreview = root.querySelector("#validation-import-preview");
+  const importSummary = root.querySelector("#validation-import-summary");
+  const importPreviewList = root.querySelector("#validation-import-preview-list");
+  const importErrorsList = root.querySelector("#validation-import-errors");
+  const importConfirmButton = root.querySelector("#validation-import-confirm");
   let records = [];
+  let pendingImport = null;
   let storageReady = true;
 
   const csvHeaders = [
@@ -150,10 +194,10 @@
     }
 
     const requiredNumbers = [
-      ["personalScore", "個人スコア"],
-      ["multiScore", "全体スコア"],
-      ["actualPoints", "実測Pt"],
-      ["bonusPercent", "特攻倍率"],
+      ["personalScore", "リザルトスコア"],
+      ["multiScore", "マルチスコア"],
+      ["actualPoints", "獲得pt"],
+      ["bonusPercent", "獲得ボーナス"],
       ["songRatePercent", "曲長ボーナス"],
       ["boostCount", "ブースト数"]
     ];
@@ -164,11 +208,12 @@
       }
     });
 
-    if (record.eventType !== "spotlight" || record.liveMode !== "multi") {
-      throw new Error("スポットライト・マルチの記録のみインポートできます。");
+    if (!Object.prototype.hasOwnProperty.call(EVENT_LABELS, record.eventType)
+      || record.liveMode !== "multi") {
+      throw new Error("対応イベントのマルチ記録のみ登録できます。");
     }
     if (record.multiScoreFeverIncluded !== true) {
-      throw new Error("全体スコアはFEVER込みとして記録してください。");
+      throw new Error("マルチスコアはFEVER込みとして記録してください。");
     }
     if (record.songRatePercent < 14 || record.songRatePercent > 54) {
       throw new Error("曲長ボーナスは14〜54%の範囲である必要があります。");
@@ -177,7 +222,7 @@
       throw new Error("このブースト数は現行計算機で予測できません。");
     }
     if (typeof record.holopass !== "boolean") {
-      throw new Error("ホロパスの有無が正しくありません。");
+      throw new Error("ホロパスポートの有無が正しくありません。");
     }
     if (typeof record.id !== "string" || !/^[a-zA-Z0-9._-]{1,80}$/.test(record.id)) {
       throw new Error("記録IDが正しくありません。");
@@ -243,11 +288,12 @@
   }
 
   function getCurrentPredictions(record) {
+    const eventSetting = EVENT_TYPES[record.eventType];
     const parameters = {
       liveMode: "multi",
       unitScore: record.personalScore,
       multiScore: record.multiScore,
-      scoreCorrection: EVENT_TYPES.spotlight.scoreCorrection,
+      scoreCorrection: eventSetting.scoreCorrection,
       bonus: record.bonusPercent,
       passMultiplier: record.holopass ? 2 : 1,
       songRate: record.songRatePercent / 100,
@@ -338,17 +384,18 @@
   function renderRecords() {
     recordList.replaceChildren();
 
-    if (records.length === 0) {
+    const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
+    if (visibleRecords.length === 0) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
       cell.colSpan = 8;
-      cell.textContent = "実測記録はまだありません。";
+      cell.textContent = `${EVENT_LABELS[validationEventMode.value]}の実測記録はまだありません。`;
       row.appendChild(cell);
       recordList.appendChild(row);
       return;
     }
 
-    records.forEach((record) => {
+    visibleRecords.forEach((record) => {
       const row = document.createElement("tr");
       row.append(
         createCell(formatRecordedAt(record.recordedAt)),
@@ -424,7 +471,7 @@
   function fitCoefficients(dataset) {
     const rows = dataset.map((record) => ({
       x: record.personalScore / 15000,
-      y: record.multiScore / 75000,
+      y: record.multiScore / EVENT_TYPES[record.eventType].scoreCorrection,
       target: record.actualPoints / multiplierFor(record)
     }));
     const meanX = rows.reduce((sum, row) => sum + row.x, 0) / rows.length;
@@ -482,7 +529,9 @@
   function predictCandidate(record, coefficients) {
     const value = coefficients.constant
       + coefficients.personalCoefficient * (record.personalScore / 15000)
-      + coefficients.multiCoefficient * (record.multiScore / 75000);
+      + coefficients.multiCoefficient * (
+        record.multiScore / EVENT_TYPES[record.eventType].scoreCorrection
+      );
     return ceilWithPrecision(value * multiplierFor(record));
   }
 
@@ -505,10 +554,11 @@
 
   function renderAnalysis() {
     analysisContent.replaceChildren();
+    const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
 
-    if (records.length < MIN_ANALYSIS_RECORDS) {
+    if (visibleRecords.length < MIN_ANALYSIS_RECORDS) {
       appendAnalysisText(
-        `記録が${records.length}件のため係数は推定しません。目安として最低${MIN_ANALYSIS_RECORDS}件の実測記録が必要です。`
+        `${EVENT_LABELS[validationEventMode.value]}の記録が${visibleRecords.length}件のため係数は推定しません。目安として最低${MIN_ANALYSIS_RECORDS}件の実測記録が必要です。`
       );
       appendAnalysisText(
         "件数を満たしても、個人スコアと全体スコアの構成に十分な違いがない場合は推定できないか、信頼性が低くなります。"
@@ -518,7 +568,7 @@
 
     let coefficients;
     try {
-      coefficients = fitCoefficients(records);
+      coefficients = fitCoefficients(visibleRecords);
     } catch (error) {
       appendAnalysisText(error.message, "validation-warning");
       appendAnalysisText("現行係数を基準として表示し、代替係数は推定していません。");
@@ -527,23 +577,28 @@
 
     const currentPredictor = (record) => getCurrentPredictions(record).scenarios.autoHigh;
     const candidatePredictor = (record) => predictCandidate(record, coefficients);
-    const currentMetrics = predictionMetrics(records, currentPredictor);
-    const candidateMetrics = predictionMetrics(records, candidatePredictor);
+    const currentMetrics = predictionMetrics(visibleRecords, currentPredictor);
+    const candidateMetrics = predictionMetrics(visibleRecords, candidatePredictor);
     const looErrors = [];
     let looAvailable = true;
 
-    for (let index = 0; index < records.length; index += 1) {
+    for (let index = 0; index < visibleRecords.length; index += 1) {
       try {
-        const trainingSet = records.filter((_, candidateIndex) => candidateIndex !== index);
+        const trainingSet = visibleRecords.filter((_, candidateIndex) => candidateIndex !== index);
         const foldCoefficients = fitCoefficients(trainingSet);
-        looErrors.push(predictCandidate(records[index], foldCoefficients) - records[index].actualPoints);
+        looErrors.push(
+          predictCandidate(visibleRecords[index], foldCoefficients) - visibleRecords[index].actualPoints
+        );
       } catch (error) {
         looAvailable = false;
         break;
       }
     }
 
-    appendAnalysisText(`現行モデル（固定120、個人/15,000、全体/75,000）の平均絶対誤差: ${formatNumber(Math.round(currentMetrics.mae))} pt`);
+    const scoreCorrection = EVENT_TYPES[validationEventMode.value].scoreCorrection;
+    appendAnalysisText(
+      `${EVENT_LABELS[validationEventMode.value]}現行モデル（固定120、個人/15,000、全体/${formatNumber(scoreCorrection)}）の平均絶対誤差: ${formatNumber(Math.round(currentMetrics.mae))} pt`
+    );
     appendAnalysisText(`実測からの推定値（固定値=${coefficients.constant.toFixed(3)}、個人係数=${coefficients.personalCoefficient.toFixed(5)}、全体係数=${coefficients.multiCoefficient.toFixed(5)})`);
     appendAnalysisText(`推定モデルの平均絶対誤差: ${formatNumber(Math.round(candidateMetrics.mae))} pt / RMSE: ${formatNumber(Math.round(candidateMetrics.rmse))} pt / 最大誤差: ${formatNumber(Math.round(candidateMetrics.maxError))} pt`);
 
@@ -605,13 +660,13 @@
       const record = validateRecord({
         id: createId(),
         recordedAt: new Date().toISOString(),
-        eventType: "spotlight",
+        eventType: validationEventMode.value,
         liveMode: "multi",
-        personalScore: readIntegerInput("#validation-personal-score", "個人リザルトスコア"),
-        multiScore: readIntegerInput("#validation-multi-score", "マルチ全体スコア"),
+        personalScore: readIntegerInput("#validation-personal-score", "リザルトスコア"),
+        multiScore: readIntegerInput("#validation-multi-score", "マルチスコア"),
         multiScoreFeverIncluded: true,
-        actualPoints: readIntegerInput("#validation-actual-points", "実際の獲得Pt"),
-        bonusPercent: readIntegerInput("#validation-bonus-percent", "特攻倍率"),
+        actualPoints: readIntegerInput("#validation-actual-points", "獲得pt"),
+        bonusPercent: readIntegerInput("#validation-bonus-percent", "獲得ボーナス"),
         songRatePercent: Number(root.querySelector("#validation-song-rate").value),
         boostCount: Number(root.querySelector("#validation-boost-count").value),
         holopass: root.querySelector("#validation-holopass").value === "true"
@@ -649,16 +704,17 @@
   }
 
   function exportCsv() {
-    const rows = [csvHeaders, ...records.map(recordToCsvRow)];
+    const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
+    const rows = [csvHeaders, ...visibleRecords.map(recordToCsvRow)];
     const csv = `\uFEFF${rows.map((row) => row.map(escapeCsv).join(",")).join("\r\n")}`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "hololive-dreams-spotlight-validation.csv";
+    link.download = `hololive-dreams-${validationEventMode.value}-validation.csv`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showStatus(`${records.length}件の実測記録をCSVに出力しました。`);
+    showStatus(`${EVENT_LABELS[validationEventMode.value]}の実測記録${visibleRecords.length}件をCSVに出力しました。`);
   }
 
   function parseCsv(text) {
@@ -701,31 +757,31 @@
     return rows;
   }
 
-  function parseImportedRecord(row, rowNumber) {
+  function parseImportedRecord(row) {
     if (row.length !== csvHeaders.length) {
-      throw new Error(`${rowNumber}行目: 列数が正しくありません。`);
+      throw new Error("列数が正しくありません。");
     }
     const values = Object.fromEntries(csvHeaders.map((header, index) => [header, row[index]]));
     if (values.schema_version !== SCHEMA_VERSION) {
-      throw new Error(`${rowNumber}行目: 未対応のCSVバージョンです。`);
+      throw new Error("未対応のCSVバージョンです。");
     }
 
     const parseInteger = (key, label) => {
       if (!/^(0|[1-9]\d*)$/.test(values[key])) {
-        throw new Error(`${rowNumber}行目: ${label}は0以上の整数である必要があります。`);
+        throw new Error(`${label}は0以上の整数である必要があります。`);
       }
       const value = Number(values[key]);
       if (!Number.isSafeInteger(value)) {
-        throw new Error(`${rowNumber}行目: ${label}が安全に扱える範囲を超えています。`);
+        throw new Error(`${label}が安全に扱える範囲を超えています。`);
       }
       return value;
     };
 
     if (values.multi_score_fever_included !== "true") {
-      throw new Error(`${rowNumber}行目: 全体スコアはFEVER込みである必要があります。`);
+      throw new Error("マルチスコアはFEVER込みである必要があります。");
     }
     if (values.holopass !== "true" && values.holopass !== "false") {
-      throw new Error(`${rowNumber}行目: ホロパスの値が正しくありません。`);
+      throw new Error("ホロパスポートの値が正しくありません。");
     }
 
     return validateRecord({
@@ -733,18 +789,67 @@
       recordedAt: values.recorded_at,
       eventType: values.event_type,
       liveMode: values.live_mode,
-      personalScore: parseInteger("personal_score", "個人スコア"),
-      multiScore: parseInteger("multi_score", "全体スコア"),
+      personalScore: parseInteger("personal_score", "リザルトスコア"),
+      multiScore: parseInteger("multi_score", "マルチスコア"),
       multiScoreFeverIncluded: true,
-      actualPoints: parseInteger("actual_points", "実測Pt"),
-      bonusPercent: parseInteger("bonus_percent", "特攻倍率"),
+      actualPoints: parseInteger("actual_points", "獲得pt"),
+      bonusPercent: parseInteger("bonus_percent", "獲得ボーナス"),
       songRatePercent: parseInteger("song_rate_percent", "曲長ボーナス"),
       boostCount: parseInteger("boost_count", "ブースト数"),
       holopass: values.holopass === "true"
     });
   }
 
-  async function importCsv(file) {
+  function clearImportPreview() {
+    pendingImport = null;
+    importPreview.hidden = true;
+    importPreviewList.replaceChildren();
+    importErrorsList.replaceChildren();
+  }
+
+  function renderImportPreview() {
+    const { eventType, fileName, rows, errors, sourceEventTypes } = pendingImport;
+    const sourceEventNames = sourceEventTypes
+      .map((type) => EVENT_LABELS[type] || `不明（${type || "空欄"}）`)
+      .join("、");
+    const existingIds = new Set(records.map((record) => record.id));
+    const skipped = rows.filter(({ record }) => existingIds.has(record.id)).length;
+    importSummary.textContent =
+      `ファイル: ${fileName} / 読み込み対象: ${EVENT_LABELS[eventType]} / ファイル内イベント: ${sourceEventNames || "不明"} / 有効: ${rows.length}件 / 既存IDのためスキップ: ${skipped}件 / エラー: ${errors.length}件`;
+    importPreviewList.replaceChildren();
+    rows.slice(0, 100).forEach(({ record, rowNumber }) => {
+      const row = document.createElement("tr");
+      row.append(
+        createCell(String(rowNumber)),
+        createCell(EVENT_LABELS[record.eventType]),
+        createCell(formatNumber(record.personalScore)),
+        createCell(formatNumber(record.multiScore)),
+        createCell(`${formatNumber(record.actualPoints)} pt`),
+        createCell(`${record.bonusPercent}%`)
+      );
+      importPreviewList.appendChild(row);
+    });
+    if (rows.length > 100) {
+      const row = document.createElement("tr");
+      const cell = createCell(`先頭100行を表示しています（全${rows.length}件）。`);
+      cell.colSpan = 6;
+      row.appendChild(cell);
+      importPreviewList.appendChild(row);
+    }
+
+    importErrorsList.replaceChildren();
+    errors.forEach((message) => {
+      const item = document.createElement("li");
+      item.textContent = message;
+      importErrorsList.appendChild(item);
+    });
+    importErrorsList.hidden = errors.length === 0;
+    importConfirmButton.disabled = errors.length > 0 || rows.length === 0;
+    importPreview.hidden = false;
+  }
+
+  async function prepareCsvImport(file) {
+    clearImportPreview();
     let text;
     try {
       text = await file.text();
@@ -753,32 +858,69 @@
       return;
     }
 
-    let imported;
+    let rows;
     try {
-      const rows = parseCsv(text);
+      rows = parseCsv(text);
       if (rows.length < 2) throw new Error("CSVに実測データがありません。");
       const headers = rows[0];
       if (headers.length !== csvHeaders.length
         || headers.some((header, index) => header !== csvHeaders[index])) {
         throw new Error("CSVヘッダーが未対応です。エクスポートした形式を使用してください。");
       }
-
-      imported = rows.slice(1).map((row, index) => parseImportedRecord(row, index + 2));
-      const ids = new Set();
-      imported.forEach((record, index) => {
-        if (ids.has(record.id)) {
-          throw new Error(`${index + 2}行目: CSV内で記録IDが重複しています。`);
-        }
-        ids.add(record.id);
-      });
     } catch (error) {
       showError(`CSVを取り込めませんでした。既存データは変更していません。${error.message}`, error);
       return;
     }
 
+    const importedRows = [];
+    const errors = [];
+    const ids = new Set();
+    const sourceEventTypes = new Set();
+    rows.slice(1).forEach((row, index) => {
+      const rowNumber = index + 2;
+      if (row.length > csvHeaders.indexOf("event_type")) {
+        sourceEventTypes.add(row[csvHeaders.indexOf("event_type")]);
+      }
+      try {
+        const record = parseImportedRecord(row);
+        if (record.eventType !== validationEventMode.value) {
+          throw new Error(`選択中の${EVENT_LABELS[validationEventMode.value]}とは異なるイベントです（${EVENT_LABELS[record.eventType]}）。`);
+        }
+        if (ids.has(record.id)) {
+          throw new Error("CSV内で記録IDが重複しています。");
+        }
+        ids.add(record.id);
+        importedRows.push({ record, rowNumber });
+      } catch (error) {
+        errors.push(`${rowNumber}行目: ${error.message}`);
+      }
+    });
+
+    pendingImport = {
+      eventType: validationEventMode.value,
+      fileName: file.name,
+      rows: importedRows,
+      errors,
+      sourceEventTypes: Array.from(sourceEventTypes)
+    };
+    renderImportPreview();
+    showStatus("インポート内容を確認してください。確認するまで既存データは変更されません。");
+  }
+
+  function commitPendingImport() {
+    if (!pendingImport || pendingImport.eventType !== validationEventMode.value) {
+      clearImportPreview();
+      showError("イベントが切り替わったため、ファイルを選び直してください。");
+      return;
+    }
+    if (pendingImport.errors.length > 0 || pendingImport.rows.length === 0) return;
+
+    const imported = pendingImport.rows.map(({ record }) => record);
     const existingIds = new Set(records.map((record) => record.id));
     const additions = imported.filter((record) => !existingIds.has(record.id));
     const skipped = imported.length - additions.length;
+    const eventLabel = EVENT_LABELS[validationEventMode.value];
+    clearImportPreview();
 
     if (additions.length === 0) {
       showStatus(`新規データはありません。既存IDの${skipped}件は上書きせずスキップしました。`);
@@ -787,7 +929,7 @@
 
     if (saveRecords(records.concat(additions))) {
       render();
-      showStatus(`${additions.length}件を追加しました。既存IDの${skipped}件は上書きせずスキップしました。`);
+      showStatus(`${eventLabel}の実測データ${additions.length}件を追加しました。既存IDの${skipped}件は上書きせずスキップしました。`);
     }
   }
 
@@ -797,16 +939,16 @@
   });
   importFile.addEventListener("change", () => {
     const file = importFile.files && importFile.files[0];
-    if (file) importCsv(file);
+    if (file) prepareCsvImport(file);
     importFile.value = "";
   });
 
-  function updateVisibility() {
-    root.hidden = eventMode.value !== "spotlight";
-  }
-
-  eventMode.addEventListener("change", updateVisibility);
+  validationEventMode.addEventListener("change", () => {
+    clearImportPreview();
+    render();
+  });
+  root.querySelector("#validation-import-confirm").addEventListener("click", commitPendingImport);
+  root.querySelector("#validation-import-cancel").addEventListener("click", clearImportPreview);
   records = loadRecords();
-  updateVisibility();
   render();
 })();

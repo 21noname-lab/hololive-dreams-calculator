@@ -1,19 +1,19 @@
 # hololive-dreams-calculator
 Hololive Dreams Event Point Calculator
 
-## Spotlight validation records
+## Measured-data validation
 
-The Spotlight validation panel stores measured multi-play results in the browser's
-LocalStorage under a separate key from calculator settings. Each record contains
-the personal result score, the final multi score including FEVER, actual event
-points, event bonus, song-length bonus, boost count, and Holo Pass status.
+The measured-data panel stores Spotlight and Point Rally multi-play records in
+LocalStorage under a separate key from calculator settings. Records keep their
+event type, and the panel filters the list, CSV export/import, predictions, and
+coefficient analysis to the selected event. Existing record IDs are skipped and
+never overwritten; imports are previewed and invalid rows are reported before
+anything is saved.
 
-The panel compares measured points with the existing calculation paths and shows
-the signed difference as predicted points minus measured points. CSV imports
-append new record IDs; existing IDs are skipped and never overwritten. Invalid
-CSV files are rejected without changing stored records.
+Predictions use the existing event-specific score correction values and point
+calculation functions. Coefficient analysis is informational only, requires at
+least five records for the selected event, and never changes the calculator's
+formulas.
 
-Coefficient analysis is informational only. It is not shown as an estimate until
-there are at least five records, and it warns when personal and multi scores are
-too correlated to distinguish reliably. Estimated coefficients are never applied
-to the calculator's existing formulas.
+CSV import/export uses the calculator's own column format. `.xlsx` import is not
+available until a representative workbook and its column meanings are provided.

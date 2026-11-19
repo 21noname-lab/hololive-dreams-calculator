@@ -152,6 +152,17 @@ select {
   font: inherit;
 }
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
 input[type="checkbox"],
 input[type="radio"] {
   width: 18px;
@@ -378,6 +389,11 @@ button:hover {
   color: var(--muted);
 }
 
+.validation-event-control {
+  max-width: 400px;
+  margin: 16px 0;
+}
+
 .validation-form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -390,6 +406,31 @@ button:hover {
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 16px;
+}
+
+.validation-import-preview {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+
+.validation-import-preview h3 {
+  margin: 0 0 8px;
+}
+
+.validation-import-errors {
+  margin: 10px 0 0;
+  color: var(--danger);
+}
+
+.validation-import-errors li + li {
+  margin-top: 4px;
+}
+
+.validation-import-preview .validation-table {
+  min-width: 720px;
 }
 
 .validation-primary-button {
