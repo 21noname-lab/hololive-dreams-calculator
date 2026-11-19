@@ -368,12 +368,184 @@ button:hover {
   font-size: 0.78rem;
 }
 
+#spotlight-validation-root {
+  margin-top: 20px;
+}
+
+.validation-description,
+.validation-note {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.validation-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.validation-actions,
+.validation-file-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.validation-primary-button {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.validation-secondary-button {
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.validation-secondary-button:hover {
+  background: var(--accent-soft);
+}
+
+.validation-message {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.validation-message.is-error {
+  color: var(--danger);
+}
+
+.validation-records,
+.validation-analysis {
+  margin-top: 22px;
+}
+
+.validation-records h3,
+.validation-analysis h3 {
+  margin: 0 0 10px;
+}
+
+.validation-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+}
+
+.validation-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: collapse;
+  background: var(--surface);
+}
+
+.validation-table th,
+.validation-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.validation-table th {
+  background: var(--surface-muted);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.validation-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.validation-delete-button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.validation-delete-button:hover {
+  background: var(--accent-soft);
+}
+
+.validation-predictions {
+  min-width: 300px;
+}
+
+.validation-predictions summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.validation-prediction-list {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.validation-prediction {
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.validation-prediction dt {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.validation-prediction dd {
+  margin: 3px 0 0;
+}
+
+.validation-delta-high {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.validation-delta-low {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.validation-delta-even {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.validation-analysis-content {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+
+.validation-analysis-content p {
+  margin: 0 0 8px;
+}
+
+.validation-analysis-content p:last-child {
+  margin-bottom: 0;
+}
+
+.validation-warning {
+  color: var(--danger);
+}
+
 @media (max-width: 760px) {
   .character-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .bonus-settings-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .validation-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -425,7 +597,8 @@ button:hover {
   .character-grid,
   .score-settings-group,
   .bonus-settings-group,
-  .range-results-grid {
+  .range-results-grid,
+  .validation-form-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 

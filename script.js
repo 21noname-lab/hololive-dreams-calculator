@@ -1,14 +1,14 @@
 // イベントの倍率データをイベントタイプごとに分けて管理します。
 const RATE_DATA = {
   rally: {
-    pu: { 5: 60, 4: 6, 3: 1 },
-    target: { 5: 30, 4: 6, 3: 1 },
-    nonTarget: { 5: 0, 4: 6, 3: 1 }
+    pu: 60,
+    target: 30,
+    nonTarget: 0
   },
   spotlight: {
-    pu: { 5: 100, 4: 6, 3: 1 },
-    target: { 5: 50, 4: 6, 3: 1 },
-    nonTarget: { 5: 0, 4: 6, 3: 1 }
+    pu: 100,
+    target: 50,
+    nonTarget: 0
   }
 };
 
@@ -152,7 +152,7 @@ function getCharacterSettings() {
 }
 
 function calculateCharacterRate(mode, setting) {
-  const base = RATE_DATA[mode][setting.status][setting.rarity];
+  const base = RATE_DATA[mode][setting.status];
   const convBonus = CONV_BONUS[setting.rarity][setting.conv] ?? 0;
   return base + convBonus;
 }
