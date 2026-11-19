@@ -4,6 +4,14 @@
   const STORAGE_KEY = "hololiveDreamsSpotlightValidationRecords";
   const SCHEMA_VERSION = "1";
   const MIN_ANALYSIS_RECORDS = 5;
+  const japanDateFormatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    calendar: "gregory",
+    numberingSystem: "latn",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
   const EVENT_LABELS = {
     spotlight: "スポットライト",
     rally: "ポイントラリー"
@@ -86,9 +94,11 @@
         <button id="validation-export" class="validation-secondary-button" type="button">CSVエクスポート</button>
         <button id="validation-import-button" class="validation-secondary-button" type="button">CSVインポート</button>
         <input id="validation-import-file" type="file" accept=".csv,text/csv" hidden>
+        <button id="validation-xlsx-import-button" class="validation-secondary-button" type="button">Excel（.xlsx）インポート</button>
+        <input id="validation-xlsx-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
       </div>
       <p class="validation-note">
-        .xlsxの列構成を確認できるサンプルがないため、Excelインポートは未対応です。現在はこの画面から出力したCSVを読み込めます。
+        Excelは対象シートのライブ記録だけを読み込みます。獲得ボーナスはExcelのパーセント表示値を整数％に変換し、未対応値・不正値・重複は登録せずプレビューに表示します。
       </p>
       <section id="validation-import-preview" class="validation-import-preview" aria-live="polite" hidden>
         <h3>インポートプレビュー</h3>
@@ -114,9 +124,68 @@
           <button id="validation-import-cancel" class="validation-secondary-button" type="button">キャンセル</button>
         </div>
       </section>
+      <section id="validation-xlsx-preview" class="validation-import-preview" aria-live="polite" hidden>
+        <h3>Excelインポートプレビュー</h3>
+        <p id="validation-xlsx-import-summary"></p>
+        <p id="validation-xlsx-sheet-names" class="validation-note"></p>
+        <div class="validation-table-wrap">
+          <table class="validation-table validation-xlsx-sheet-table">
+            <thead>
+              <tr>
+                <th scope="col">シート</th>
+                <th scope="col">読み込み</th>
+                <th scope="col">登録可能</th>
+                <th scope="col">保留</th>
+                <th scope="col">重複</th>
+                <th scope="col">登録対象外</th>
+              </tr>
+            </thead>
+            <tbody id="validation-xlsx-sheet-list"></tbody>
+          </table>
+        </div>
+        <div class="validation-table-wrap validation-xlsx-record-table-wrap">
+          <table class="validation-table validation-xlsx-record-table">
+            <thead>
+              <tr>
+                <th scope="col">状態</th>
+                <th scope="col">シート / 行</th>
+                <th scope="col">日付</th>
+                <th scope="col">リザルトスコア</th>
+                <th scope="col">マルチスコア</th>
+                <th scope="col">獲得pt</th>
+                <th scope="col">獲得ボーナス</th>
+                <th scope="col">曲長ボーナス</th>
+                <th scope="col">ブースト数</th>
+                <th scope="col">備考</th>
+                <th scope="col">保留理由</th>
+              </tr>
+            </thead>
+            <tbody id="validation-xlsx-record-list"></tbody>
+          </table>
+        </div>
+        <div class="validation-file-actions">
+          <button id="validation-xlsx-import-confirm" class="validation-primary-button" type="button">登録可能なデータを追加</button>
+          <button id="validation-xlsx-import-cancel" class="validation-secondary-button" type="button">キャンセル</button>
+        </div>
+      </section>
 
       <section class="validation-records" aria-labelledby="validation-records-title">
-        <h3 id="validation-records-title">実測記録</h3>
+        <div class="validation-records-header">
+          <h3 id="validation-records-title">実測記録</h3>
+          <div class="validation-record-actions">
+            <span id="validation-record-count" class="validation-record-count"></span>
+            <button id="validation-delete-event-button" class="validation-delete-event-button" type="button">
+              このイベントの実測記録をすべて削除
+            </button>
+          </div>
+        </div>
+        <div id="validation-delete-confirmation" class="validation-delete-confirmation" role="group" aria-labelledby="validation-delete-confirmation-message" hidden>
+          <p id="validation-delete-confirmation-message" aria-live="polite"></p>
+          <div class="validation-delete-confirmation-actions">
+            <button id="validation-delete-event-confirm" class="validation-delete-event-confirm" type="button">削除する</button>
+            <button id="validation-delete-event-cancel" class="validation-secondary-button" type="button">キャンセル</button>
+          </div>
+        </div>
         <div class="validation-table-wrap">
           <table class="validation-table">
             <thead>
@@ -149,14 +218,29 @@
   const recordList = root.querySelector("#validation-record-list");
   const analysisContent = root.querySelector("#validation-analysis-content");
   const importFile = root.querySelector("#validation-import-file");
+  const xlsxImportFile = root.querySelector("#validation-xlsx-import-file");
   const validationEventMode = root.querySelector("#validation-event-mode");
   const importPreview = root.querySelector("#validation-import-preview");
   const importSummary = root.querySelector("#validation-import-summary");
   const importPreviewList = root.querySelector("#validation-import-preview-list");
   const importErrorsList = root.querySelector("#validation-import-errors");
   const importConfirmButton = root.querySelector("#validation-import-confirm");
+  const xlsxPreview = root.querySelector("#validation-xlsx-preview");
+  const xlsxImportSummary = root.querySelector("#validation-xlsx-import-summary");
+  const xlsxSheetNames = root.querySelector("#validation-xlsx-sheet-names");
+  const xlsxSheetList = root.querySelector("#validation-xlsx-sheet-list");
+  const xlsxRecordList = root.querySelector("#validation-xlsx-record-list");
+  const xlsxImportConfirmButton = root.querySelector("#validation-xlsx-import-confirm");
+  const recordCount = root.querySelector("#validation-record-count");
+  const deleteEventButton = root.querySelector("#validation-delete-event-button");
+  const deleteConfirmation = root.querySelector("#validation-delete-confirmation");
+  const deleteConfirmationMessage = root.querySelector("#validation-delete-confirmation-message");
+  const deleteEventConfirmButton = root.querySelector("#validation-delete-event-confirm");
+  const deleteEventCancelButton = root.querySelector("#validation-delete-event-cancel");
   let records = [];
   let pendingImport = null;
+  let pendingXlsxImport = null;
+  let pendingDeleteEventType = null;
   let storageReady = true;
 
   const csvHeaders = [
@@ -381,10 +465,41 @@
     return new Date(value).toLocaleString("ja-JP");
   }
 
+  function clearDeleteConfirmation() {
+    pendingDeleteEventType = null;
+    deleteConfirmation.hidden = true;
+    deleteConfirmationMessage.textContent = "";
+  }
+
+  function confirmDeleteEventRecords() {
+    const eventType = pendingDeleteEventType;
+    if (!eventType || eventType !== validationEventMode.value) {
+      clearDeleteConfirmation();
+      showError("イベントが切り替わったため、一括削除を中止しました。");
+      return;
+    }
+
+    const nextRecords = records.filter((record) => record.eventType !== eventType);
+    const deletedCount = records.length - nextRecords.length;
+    clearDeleteConfirmation();
+    if (deletedCount === 0) {
+      showStatus(`${EVENT_LABELS[eventType]}の実測記録はありません。データは変更されていません。`);
+      render();
+      return;
+    }
+
+    if (saveRecords(nextRecords)) {
+      render();
+      showStatus(`${EVENT_LABELS[eventType]}の実測記録${formatNumber(deletedCount)}件を削除しました。`);
+    }
+  }
+
   function renderRecords() {
     recordList.replaceChildren();
 
     const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
+    recordCount.textContent = `${EVENT_LABELS[validationEventMode.value]}: ${formatNumber(visibleRecords.length)}件`;
+    deleteEventButton.disabled = visibleRecords.length === 0;
     if (visibleRecords.length === 0) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
@@ -417,7 +532,6 @@
       deleteButton.textContent = "削除";
       deleteButton.setAttribute("aria-label", `${formatRecordedAt(record.recordedAt)}の記録を削除`);
       deleteButton.addEventListener("click", () => {
-        if (!window.confirm("この実測記録を削除しますか？")) return;
         const nextRecords = records.filter((candidate) => candidate.id !== record.id);
         if (saveRecords(nextRecords)) {
           render();
@@ -935,6 +1049,407 @@
     }
   }
 
+  function parseXlsxDate(value, date1904) {
+    const text = String(value ?? "").trim();
+    if (text === "") throw new Error("ブロックの日付が空欄です。");
+
+    let timestamp;
+    if (/^\d+(?:\.\d+)?$/.test(text)) {
+      const serial = Number(text);
+      if (!Number.isFinite(serial) || serial < 0 || serial > 2958465
+        || (!date1904 && Math.floor(serial) === 0)
+        || (!date1904 && Math.floor(serial) === 60)) {
+        throw new Error(`Excel日付シリアル値が正しくありません: ${text}`);
+      }
+      const excelDays = Math.floor(serial);
+      const epoch = date1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 31);
+      const adjustedDays = !date1904 && excelDays > 60 ? excelDays - 1 : excelDays;
+      timestamp = epoch + adjustedDays * 24 * 60 * 60 * 1000;
+    } else {
+      const match = /(\d{4})[./-](\d{1,2})[./-](\d{1,2})/.exec(text);
+      if (!match) throw new Error(`ブロックの日付を読み取れません: ${text}`);
+      const [, yearText, monthText, dayText] = match;
+      const year = Number(yearText);
+      const month = Number(monthText);
+      const day = Number(dayText);
+      timestamp = Date.UTC(year, month - 1, day);
+      const date = new Date(timestamp);
+      if (date.getUTCFullYear() !== year
+        || date.getUTCMonth() !== month - 1
+        || date.getUTCDate() !== day) {
+        throw new Error(`ブロックの日付が正しくありません: ${text}`);
+      }
+    }
+
+    const date = new Date(timestamp);
+    if (!Number.isFinite(date.getTime())) throw new Error(`ブロックの日付が正しくありません: ${text}`);
+    return date.toISOString().slice(0, 10) + "T00:00:00.000Z";
+  }
+
+  function parseXlsxInteger(value, label, reasons) {
+    const text = String(value ?? "").trim();
+    if (text === "") {
+      reasons.push(`${label}が空欄です。`);
+      return null;
+    }
+    if (!/^(0|[1-9]\d*)$/.test(text)) {
+      reasons.push(`${label}が0以上の整数ではありません（${text}）。`);
+      return null;
+    }
+
+    const number = Number(text);
+    if (!Number.isSafeInteger(number)) {
+      reasons.push(`${label}が安全に扱える整数の範囲を超えています。`);
+      return null;
+    }
+    return number;
+  }
+
+  function parseXlsxBonus(value, reasons) {
+    const text = String(value ?? "").trim();
+    if (text === "") {
+      reasons.push("イベント獲得ボーナスが空欄です。");
+      return null;
+    }
+
+    const excelPercent = Number(text);
+    if (!Number.isFinite(excelPercent) || excelPercent < 0) {
+      reasons.push(`イベント獲得ボーナスが数値ではありません（${text}）。`);
+      return null;
+    }
+
+    const bonusPercent = excelPercent * 100;
+    const roundedBonusPercent = Math.round(bonusPercent);
+    if (!Number.isSafeInteger(roundedBonusPercent)
+      || Math.abs(bonusPercent - roundedBonusPercent) > 1e-8) {
+      reasons.push(`イベント獲得ボーナスを整数％に変換できません（${text}）。`);
+      return null;
+    }
+    return roundedBonusPercent;
+  }
+
+  function japanDateKey(value) {
+    const parts = japanDateFormatter.formatToParts(new Date(value));
+    const year = parts.find(({ type }) => type === "year").value;
+    const month = parts.find(({ type }) => type === "month").value;
+    const day = parts.find(({ type }) => type === "day").value;
+    return `${year}-${month}-${day}`;
+  }
+
+  function xlsxDuplicateKey(record) {
+    return JSON.stringify([
+      record.eventType,
+      record.liveMode,
+      japanDateKey(record.recordedAt),
+      record.personalScore,
+      record.multiScore,
+      record.multiScoreFeverIncluded,
+      record.actualPoints,
+      record.bonusPercent,
+      record.songRatePercent,
+      record.boostCount,
+      record.holopass
+    ]);
+  }
+
+  function buildXlsxImport(fileName, workbook) {
+    const items = [];
+    const sheetCounts = workbook.sheets.map((sheet) => ({
+      name: sheet.name,
+      read: 0,
+      eligible: 0,
+      held: 0,
+      duplicate: 0,
+      excluded: 0
+    }));
+    const existingKeys = new Set(
+      records
+        .filter((record) => record.eventType === "spotlight")
+        .map(xlsxDuplicateKey)
+    );
+    const sourceKeys = new Set();
+    const fieldLabels = {
+      "個人スコア": "リザルトスコア",
+      "全体スコア": "マルチスコア",
+      "ポイント": "獲得pt",
+      "曲長ボーナス": "曲長ボーナス",
+      "炊き数": "ブースト数"
+    };
+
+    workbook.sheets.forEach((sheet, sheetIndex) => {
+      const counts = sheetCounts[sheetIndex];
+      sheet.liveBlocks.forEach((block) => {
+        block.entries.forEach((entry) => {
+          counts.read += 1;
+          const item = {
+            sheetName: sheet.name,
+            rowNumber: entry.rowNumber,
+            blockNumber: block.blockNumber,
+            values: entry.values,
+            dateValue: block.dateValue,
+            date1904: workbook.date1904,
+            bonusValue: block.bonusCell.value,
+            note: entry.values["備考"] || "",
+            status: "",
+            reasons: [],
+            record: null,
+            date: "",
+            bonusPercent: null
+          };
+
+          if (!sheet.isTarget) {
+            item.status = "excluded";
+            item.reasons.push("実測対象外シートです。");
+            counts.excluded += 1;
+            items.push(item);
+            return;
+          }
+
+          const reasons = item.reasons;
+          if (block.dateFormula) reasons.push("ブロックの日付が数式です。");
+          if (block.bonusCell.formula) reasons.push("イベント獲得ボーナスが数式です。");
+          entry.formulas.forEach((header) => {
+            if (header !== "備考") {
+              reasons.push(`${fieldLabels[header] || header}が数式です。`);
+            }
+          });
+
+          try {
+            item.date = parseXlsxDate(block.dateValue, workbook.date1904);
+          } catch (error) {
+            reasons.push(error.message);
+          }
+
+          const personalScore = parseXlsxInteger(
+            entry.values["個人スコア"],
+            "リザルトスコア",
+            reasons
+          );
+          const multiScore = parseXlsxInteger(
+            entry.values["全体スコア"],
+            "マルチスコア",
+            reasons
+          );
+          const actualPoints = parseXlsxInteger(
+            entry.values["ポイント"],
+            "獲得pt",
+            reasons
+          );
+          const songRatePercent = parseXlsxInteger(
+            entry.values["曲長ボーナス"],
+            "曲長ボーナス",
+            reasons
+          );
+          const boostCount = parseXlsxInteger(
+            entry.values["炊き数"],
+            "ブースト数",
+            reasons
+          );
+          const bonusPercent = parseXlsxBonus(block.bonusCell.value, reasons);
+          item.bonusPercent = bonusPercent;
+
+          if (songRatePercent !== null && (songRatePercent < 14 || songRatePercent > 54)) {
+            reasons.push("曲長ボーナスは14〜54%の範囲外です。");
+          }
+          if (boostCount !== null
+            && !Object.prototype.hasOwnProperty.call(BOOST_MULTIPLIERS, boostCount)) {
+            reasons.push("現行計算機で未対応のブースト数です。");
+          }
+
+          if (reasons.length === 0) {
+            try {
+              item.record = validateRecord({
+                id: createId(),
+                recordedAt: item.date,
+                eventType: "spotlight",
+                liveMode: "multi",
+                personalScore,
+                multiScore,
+                multiScoreFeverIncluded: true,
+                actualPoints,
+                bonusPercent,
+                songRatePercent,
+                boostCount,
+                holopass: true
+              });
+              const duplicateKey = xlsxDuplicateKey(item.record);
+              if (existingKeys.has(duplicateKey)) {
+                item.status = "duplicate";
+                reasons.push("既存のスポットライト記録と内容が重複しています。");
+              } else if (sourceKeys.has(duplicateKey)) {
+                item.status = "duplicate";
+                reasons.push("ファイル内の別の記録と内容が重複しています。");
+              } else {
+                item.status = "eligible";
+                sourceKeys.add(duplicateKey);
+              }
+            } catch (error) {
+              reasons.push(error.message);
+            }
+          }
+
+          if (!item.status) item.status = reasons.length > 0 ? "held" : "eligible";
+          counts[item.status] += 1;
+          items.push(item);
+        });
+      });
+    });
+
+    return {
+      fileName,
+      sheetNames: workbook.sheets.map(({ name }) => name),
+      sheets: sheetCounts,
+      items
+    };
+  }
+
+  function clearXlsxImportPreview() {
+    pendingXlsxImport = null;
+    xlsxPreview.hidden = true;
+    xlsxSheetList.replaceChildren();
+    xlsxRecordList.replaceChildren();
+  }
+
+  function displayXlsxNumber(value) {
+    const text = String(value ?? "").trim();
+    if (text === "") return "—";
+    if (/^(0|[1-9]\d*)$/.test(text) && Number.isSafeInteger(Number(text))) {
+      return formatNumber(Number(text));
+    }
+    return text;
+  }
+
+  function displayXlsxDate(item) {
+    if (item.date) return item.date.slice(0, 10);
+    try {
+      return parseXlsxDate(item.dateValue, item.date1904).slice(0, 10);
+    } catch {
+      return String(item.dateValue || "—");
+    }
+  }
+
+  function renderXlsxImportPreview() {
+    const { fileName, sheetNames, sheets, items } = pendingXlsxImport;
+    const counts = items.reduce((summary, item) => {
+      summary[item.status] += 1;
+      return summary;
+    }, { eligible: 0, held: 0, duplicate: 0, excluded: 0 });
+
+    xlsxImportSummary.textContent =
+      `ファイル: ${fileName} / イベント: スポットライト / 全体: ${items.length}件 / 登録可能: ${counts.eligible}件 / 保留: ${counts.held}件 / 重複: ${counts.duplicate}件 / 登録対象外: ${counts.excluded}件`;
+    xlsxSheetNames.textContent = `読み込んだシート名: ${sheetNames.join("、")}`;
+    xlsxSheetList.replaceChildren();
+    sheets.forEach((sheet) => {
+      const row = document.createElement("tr");
+      row.append(
+        createCell(sheet.name),
+        createCell(`${formatNumber(sheet.read)}件`),
+        createCell(`${formatNumber(sheet.eligible)}件`),
+        createCell(`${formatNumber(sheet.held)}件`),
+        createCell(`${formatNumber(sheet.duplicate)}件`),
+        createCell(`${formatNumber(sheet.excluded)}件`)
+      );
+      xlsxSheetList.appendChild(row);
+    });
+
+    const statusLabels = {
+      eligible: "登録可能",
+      held: "保留",
+      duplicate: "重複",
+      excluded: "登録対象外"
+    };
+    xlsxRecordList.replaceChildren();
+    items.forEach((item) => {
+      const row = document.createElement("tr");
+      const bonus = item.bonusPercent === null
+        ? String(item.bonusValue || "—")
+        : `${formatNumber(item.bonusPercent)}%`;
+      row.append(
+        createCell(statusLabels[item.status]),
+        createCell(`${item.sheetName} / ${item.rowNumber}行（ブロック${item.blockNumber}）`),
+        createCell(displayXlsxDate(item)),
+        createCell(displayXlsxNumber(item.values["個人スコア"])),
+        createCell(displayXlsxNumber(item.values["全体スコア"])),
+        createCell(displayXlsxNumber(item.values["ポイント"])),
+        createCell(bonus),
+        createCell(displayXlsxNumber(item.values["曲長ボーナス"])),
+        createCell(displayXlsxNumber(item.values["炊き数"])),
+        createCell(String(item.note || "—")),
+        createCell(item.reasons.join(" "))
+      );
+      xlsxRecordList.appendChild(row);
+    });
+
+    xlsxImportConfirmButton.textContent = `登録可能な${formatNumber(counts.eligible)}件を追加`;
+    xlsxImportConfirmButton.disabled = !storageReady || counts.eligible === 0;
+    xlsxPreview.hidden = false;
+  }
+
+  async function prepareXlsxImport(file) {
+    clearXlsxImportPreview();
+    if (!file) return;
+
+    try {
+      const workbook = await window.SpotlightXlsxImport.readWorkbook(file);
+      pendingXlsxImport = buildXlsxImport(file.name, workbook);
+      renderXlsxImportPreview();
+      showStatus("Excelの内容を確認してください。確定するまで既存データは変更されません。");
+    } catch (error) {
+      showError(`Excelを取り込めませんでした。既存データは変更していません。${error.message}`, error);
+    }
+  }
+
+  function commitPendingXlsxImport() {
+    if (!pendingXlsxImport) return;
+
+    const previewDuplicates = pendingXlsxImport.items
+      .filter((item) => item.status === "duplicate")
+      .length;
+    const heldRecords = pendingXlsxImport.items
+      .filter((item) => item.status === "held")
+      .length;
+    const latestRecords = loadRecords();
+    if (!storageReady) return;
+
+    const existingKeys = new Set(
+      latestRecords
+        .filter((record) => record.eventType === "spotlight")
+        .map(xlsxDuplicateKey)
+    );
+    const existingIds = new Set(latestRecords.map((record) => record.id));
+    const additions = [];
+    let skippedDuplicates = 0;
+
+    pendingXlsxImport.items
+      .filter((item) => item.status === "eligible" && item.record)
+      .forEach((item) => {
+        const key = xlsxDuplicateKey(item.record);
+        if (existingKeys.has(key) || existingIds.has(item.record.id)) {
+          skippedDuplicates += 1;
+          return;
+        }
+        existingKeys.add(key);
+        existingIds.add(item.record.id);
+        additions.push(item.record);
+      });
+
+    if (additions.length === 0) {
+      records = latestRecords;
+      clearXlsxImportPreview();
+      render();
+      showStatus(`新規登録はありません。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は追加しませんでした。`);
+      return;
+    }
+
+    if (saveRecords(latestRecords.concat(additions))) {
+      clearXlsxImportPreview();
+      render();
+      showStatus(
+        `スポットライトの実測データ${additions.length}件を追加しました。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は登録していません。`
+      );
+    }
+  }
+
   root.querySelector("#validation-export").addEventListener("click", exportCsv);
   root.querySelector("#validation-import-button").addEventListener("click", () => {
     importFile.click();
@@ -944,13 +1459,46 @@
     if (file) prepareCsvImport(file);
     importFile.value = "";
   });
+  root.querySelector("#validation-xlsx-import-button").addEventListener("click", () => {
+    xlsxImportFile.click();
+  });
+  xlsxImportFile.addEventListener("change", () => {
+    const file = xlsxImportFile.files && xlsxImportFile.files[0];
+    if (file) prepareXlsxImport(file);
+    xlsxImportFile.value = "";
+  });
 
   validationEventMode.addEventListener("change", () => {
+    clearDeleteConfirmation();
     clearImportPreview();
+    clearXlsxImportPreview();
     render();
+  });
+  deleteEventButton.addEventListener("click", () => {
+    const eventType = validationEventMode.value;
+    const count = records.filter((record) => record.eventType === eventType).length;
+    if (count === 0) {
+      deleteEventButton.disabled = true;
+      showStatus(`${EVENT_LABELS[eventType]}の実測記録はありません。`);
+      return;
+    }
+    pendingDeleteEventType = eventType;
+    deleteConfirmationMessage.textContent =
+      `${EVENT_LABELS[eventType]}の実測記録${formatNumber(count)}件をすべて削除します。`;
+    deleteConfirmation.hidden = false;
+  });
+  deleteEventConfirmButton.addEventListener("click", confirmDeleteEventRecords);
+  deleteEventCancelButton.addEventListener("click", () => {
+    clearDeleteConfirmation();
+    showStatus("一括削除をキャンセルしました。実測データは変更されていません。");
   });
   root.querySelector("#validation-import-confirm").addEventListener("click", commitPendingImport);
   root.querySelector("#validation-import-cancel").addEventListener("click", clearImportPreview);
+  xlsxImportConfirmButton.addEventListener("click", commitPendingXlsxImport);
+  root.querySelector("#validation-xlsx-import-cancel").addEventListener("click", () => {
+    clearXlsxImportPreview();
+    showStatus("Excel取込をキャンセルしました。保存データは変更されていません。");
+  });
   records = loadRecords();
   render();
 })();

@@ -15,5 +15,10 @@ calculation functions. Coefficient analysis is informational only, requires at
 least five records for the selected event, and never changes the calculator's
 formulas.
 
-CSV import/export uses the calculator's own column format. `.xlsx` import is not
-available until a representative workbook and its column meanings are provided.
+CSV import/export uses the calculator's own column format. The measured-data
+panel also imports the chapter-event `.xlsx` workbook locally in the browser,
+without an external library or CDN. It reads the five named measurement sheets,
+maps live columns by their headers, and previews eligible, held, duplicate, and
+out-of-scope rows before registration. Excel bonus values stored as percentage
+fractions are converted to integer percentages; unsupported values and rows
+with missing or non-numeric required fields are held rather than corrected.

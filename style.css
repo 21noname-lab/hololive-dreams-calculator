@@ -433,6 +433,26 @@ button:hover {
   min-width: 720px;
 }
 
+.validation-xlsx-sheet-table {
+  min-width: 720px;
+  margin-bottom: 14px;
+}
+
+.validation-xlsx-record-table-wrap {
+  max-height: 520px;
+  overflow: auto;
+}
+
+.validation-xlsx-record-table {
+  min-width: 1500px;
+}
+
+.validation-xlsx-record-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .validation-primary-button {
   background: var(--primary);
   color: #ffffff;
@@ -463,9 +483,73 @@ button:hover {
   margin-top: 22px;
 }
 
+.validation-records-header,
+.validation-record-actions,
+.validation-delete-confirmation-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.validation-records-header {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
 .validation-records h3,
 .validation-analysis h3 {
   margin: 0 0 10px;
+}
+
+.validation-records-header h3 {
+  margin: 0;
+}
+
+.validation-record-count {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.validation-delete-event-button {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--danger);
+  background: var(--surface);
+  color: var(--danger);
+}
+
+.validation-delete-event-button:hover:not(:disabled) {
+  background: var(--surface-muted);
+}
+
+.validation-delete-event-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.validation-delete-confirmation {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 9px;
+  background: var(--surface-muted);
+}
+
+.validation-delete-confirmation p {
+  margin: 0;
+}
+
+.validation-delete-confirmation-actions {
+  margin-top: 10px;
+}
+
+.validation-delete-event-confirm {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .validation-table-wrap {
@@ -509,6 +593,17 @@ button:hover {
 
 .validation-delete-button:hover {
   background: var(--accent-soft);
+}
+
+@media (max-width: 520px) {
+  .validation-records-header {
+    align-items: flex-start;
+  }
+
+  .validation-record-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 
 .validation-predictions {
