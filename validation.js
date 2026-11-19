@@ -36,10 +36,10 @@
     <fieldset class="spotlight-validation">
       <legend>実測データの検証</legend>
       <p class="validation-description">
-        実測値を記録し、現在の計算機による予測値との差を比較します。記録はこのブラウザー内に保存されます。
+        実測値を記録し、現在の計算機による予測値との差を比較します。
       </p>
       <p class="validation-note">
-        マルチスコアはFEVER込みの最終値として記録します。差分は「予測 − 実測」です。
+        差分は「予測 − 実測」です。
       </p>
       <label class="validation-event-control" for="validation-event-mode">
         イベント
@@ -98,7 +98,8 @@
         <input id="validation-xlsx-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
       </div>
       <p class="validation-note">
-        Excelは対象シートのライブ記録だけを読み込みます。獲得ボーナスはExcelのパーセント表示値を整数％に変換し、未対応値・不正値・重複は登録せずプレビューに表示します。
+        Excelは対象シートのライブ記録だけを読み込みます。<br>
+        獲得ボーナスはExcelのパーセント表示値を整数％に変換し、未対応値・不正値・重複は登録せずプレビューに表示します。
       </p>
       <section id="validation-import-preview" class="validation-import-preview" aria-live="polite" hidden>
         <h3>インポートプレビュー</h3>
@@ -175,7 +176,7 @@
           <div class="validation-record-actions">
             <span id="validation-record-count" class="validation-record-count"></span>
             <button id="validation-delete-event-button" class="validation-delete-event-button" type="button">
-              このイベントの実測記録をすべて削除
+              記録を全て削除
             </button>
           </div>
         </div>
@@ -448,8 +449,8 @@
       appendPrediction(list, "既存の基礎計算経路", predictions.direct, record.actualPoints);
       appendPrediction(list, "手動下振れ", predictions.scenarios.manualLow, record.actualPoints);
       appendPrediction(list, "手動上振れ", predictions.scenarios.manualHigh, record.actualPoints);
-      appendPrediction(list, "オート上振れ（個人スコア1.0倍）", predictions.scenarios.autoHigh, record.actualPoints);
       appendPrediction(list, "オート下振れ", predictions.scenarios.autoLow, record.actualPoints);
+      appendPrediction(list, "オート上振れ（個人スコア1.0倍）", predictions.scenarios.autoHigh, record.actualPoints);
       details.appendChild(list);
     } catch (error) {
       const message = document.createElement("p");

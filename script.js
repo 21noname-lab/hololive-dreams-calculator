@@ -194,8 +194,8 @@ function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorre
   return {
     manualLow: calculateScenario(1.2),
     manualHigh: calculateScenario(1.3),
-    autoHigh: calculateScenario(1.0),
-    autoLow: calculateScenario(0.9)
+    autoLow: calculateScenario(0.9),
+    autoHigh: calculateScenario(1.0)
   };
 }
 
@@ -281,8 +281,8 @@ function updateCalculator() {
   });
   document.querySelector("#manual-low-result").textContent = additionalPoints.manualLow.toLocaleString("ja-JP");
   document.querySelector("#manual-high-result").textContent = additionalPoints.manualHigh.toLocaleString("ja-JP");
-  document.querySelector("#auto-high-result").textContent = additionalPoints.autoHigh.toLocaleString("ja-JP");
   document.querySelector("#auto-low-result").textContent = additionalPoints.autoLow.toLocaleString("ja-JP");
+  document.querySelector("#auto-high-result").textContent = additionalPoints.autoHigh.toLocaleString("ja-JP");
 }
 
 function showStorageError(message, error) {
