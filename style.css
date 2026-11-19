@@ -212,6 +212,11 @@ button:hover {
   width: min(100%, 400px);
 }
 
+.event-type-help,
+.point-prediction-help {
+  margin: 8px 0 0;
+}
+
 .formation-summary {
   display: flex;
   min-width: 230px;
