@@ -192,10 +192,8 @@ function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorre
   });
 
   return {
-    manualLow: calculateScenario(1.2),
-    manualHigh: calculateScenario(1.3),
-    autoLow: calculateScenario(0.9),
-    autoHigh: calculateScenario(1.0)
+    low: calculateScenario(1.2),
+    high: calculateScenario(1.5)
   };
 }
 
@@ -257,8 +255,8 @@ function updateCalculator() {
   if (values.error) {
     errorElement.textContent = values.error;
     resultElement.textContent = "—";
-    ["manual-low-result", "manual-high-result", "auto-high-result", "auto-low-result"].forEach((id) => {
-      document.querySelector(`#${id}`).textContent = "—";
+    ["low-result", "high-result"].forEach((id) => {
+      document.querySelector("#" + id).textContent = "—";
     });
     return;
   }
@@ -287,10 +285,8 @@ function updateCalculator() {
     songRate: values.songRate,
     boostRate: values.boostRate
   });
-  document.querySelector("#manual-low-result").textContent = additionalPoints.manualLow.toLocaleString("ja-JP");
-  document.querySelector("#manual-high-result").textContent = additionalPoints.manualHigh.toLocaleString("ja-JP");
-  document.querySelector("#auto-low-result").textContent = additionalPoints.autoLow.toLocaleString("ja-JP");
-  document.querySelector("#auto-high-result").textContent = additionalPoints.autoHigh.toLocaleString("ja-JP");
+  document.querySelector("#low-result").textContent = additionalPoints.low.toLocaleString("ja-JP");
+  document.querySelector("#high-result").textContent = additionalPoints.high.toLocaleString("ja-JP");
 }
 
 function showStorageError(message, error) {
