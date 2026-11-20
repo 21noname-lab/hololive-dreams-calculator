@@ -14,7 +14,7 @@
   <header class="site-header">
     <div class="header-copy">
       <h1>ホロライブドリームス ポイント計算機</h1>
-      <p>条件設定をして、おおよそのポイントを計算します<br>※URL共有はホロドリ公式鯖のみでお願いいたします。</p>
+      <p>条件設定をして、おおよそのポイントを計算します。<br>※URL共有はホロドリ公式鯖のみでお願いいたします。</p>
     </div>
     <label class="theme-control" for="theme-mode">
       <span>表示モード</span>
@@ -28,110 +28,187 @@
   <main class="calculator">
     <p id="storage-error" class="storage-error" role="alert" hidden></p>
 
-    <fieldset class="event-settings">
-      <legend>イベント選択</legend>
-      <div class="event-controls">
-        <label class="event-type-control" for="event-mode">
-          イベント種類
-          <select id="event-mode">
-            <option value="rally">ポイントラリー</option>
-            <option value="spotlight">スポットライト</option>
-          </select>
-        </label>
-      </div>
-      <p class="field-help event-type-help">ポイントラリーとスポットライトで獲得ポイントが変動します。<br>最初にイベントを選択する必要があります。</p>
-    </fieldset>
+    <nav class="page-tabs" aria-label="ページ切り替え" role="tablist">
+      <button class="page-tab is-active" id="points-tab" type="button" role="tab" aria-selected="true" aria-controls="points-page" data-page="points">
+        <span class="page-tab-label-desktop">ポイント計算</span>
+        <span class="page-tab-label-mobile">pt計算</span>
+      </button>
+      <button class="page-tab" id="bonus-tab" type="button" role="tab" aria-selected="false" aria-controls="bonus-page" data-page="bonus">
+        <span class="page-tab-label-desktop">獲得ボーナスの計算</span>
+        <span class="page-tab-label-mobile">獲得ボナ計算</span>
+      </button>
+      <button class="page-tab" id="validation-tab" type="button" role="tab" aria-selected="false" aria-controls="validation-page" data-page="validation">
+        <span class="page-tab-label-desktop">実測データの検証</span>
+        <span class="page-tab-label-mobile">検証</span>
+      </button>
+    </nav>
 
-    <fieldset class="team-settings">
-      <legend>カード一覧</legend>
-      <div class="card-list-summary">
-        <div class="formation-summary" aria-live="polite">
-          <span>イベント獲得ボーナス</span>
-          <strong id="formation-bonus">0%</strong>
-        </div>
-      </div>
-      <div id="character-list" class="character-grid"></div>
-    </fieldset>
-
-    <fieldset class="live-settings">
-      <legend>ライブ設定</legend>
-      <div class="live-format form-field">
-        <label for="live-mode">ライブ形式</label>
-        <select id="live-mode">
-          <option value="solo">ソロ</option>
-          <option value="multi" selected>マルチ</option>
-        </select>
-      </div>
-
-      <div class="score-settings-group">
-        <label for="unit-score">
-          ユニットスコア
-          <input id="unit-score" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
-          <span class="field-help">ユニットスコアを入力してください</span>
-        </label>
-        <div id="multi-score-field" class="multi-score-group" hidden>
-          <label for="multi-score">
-            全体スコア
-            <input id="multi-score" type="text" inputmode="numeric" pattern="[0-9]*" value="0" autocomplete="off">
-            <span class="field-help">おおよその全体スコアを記入してください</span>
+    <section class="page-panel" id="points-page" role="tabpanel" aria-labelledby="points-tab" data-page-panel="points">
+      <fieldset class="event-settings">
+        <legend>イベント選択</legend>
+        <div class="event-controls">
+          <label class="event-type-control" for="event-mode">
+            イベント種類
+            <select id="event-mode">
+              <option value="">イベントを選択してください。</option>
+              <option value="rally">ポイントラリー</option>
+              <option value="spotlight">スコアアタック</option>
+            </select>
           </label>
-          <button id="reset-settings" class="reset-button" type="button">入力内容をリセット</button>
         </div>
-      </div>
+      </fieldset>
 
-      <div class="bonus-settings-group">
-        <label for="bonus-percent">
-          獲得ボーナス
-          <input id="bonus-percent" type="text" inputmode="numeric" pattern="[0-9]*" value="" autocomplete="off">
-          <span class="field-help">カード一覧とは別に整数％で入力してください。空欄は0%として扱います</span>
-        </label>
-        <label for="song-rate">
-          曲長ボーナス
-          <select id="song-rate"></select>
-        </label>
-        <label for="boost-count">
-          ブースト数
-          <select id="boost-count">
-            <option value="0">0炊き</option>
-            <option value="1" selected>1炊き</option>
-            <option value="2">2炊き</option>
-            <option value="3">3炊き</option>
-            <option value="5">5炊き</option>
-            <option value="10">10炊き</option>
-          </select>
-        </label>
-        <label for="holopass">
-          ホロパスポート
-          <select id="holopass">
-            <option value="1">なし</option>
-            <option value="2" selected>あり</option>
-          </select>
-        </label>
-        <p class="field-help bonus-note">曲長ボーナスと炊き数を合わせてください</p>
-      </div>
-    </fieldset>
+      <div id="point-content" hidden>
+        <fieldset class="live-settings">
+          <legend>ライブ設定</legend>
+          <div class="live-format form-field">
+            <label for="live-mode">ライブ形式</label>
+            <select id="live-mode">
+              <option value="solo">ソロ</option>
+              <option value="multi" selected>マルチ</option>
+            </select>
+          </div>
 
-    <fieldset class="calculation-settings">
-      <legend>イベントポイント計算</legend>
-      <output id="point-result" hidden>—</output>
-      <div class="range-results" aria-label="ポイント予測">
-        <h3>ポイント予測</h3>
-        <div class="range-results-grid">
-          <div class="range-result">
-            <span>下振れ</span>
-            <strong><output id="low-result">—</output><small> pt</small></strong>
+          <div class="score-settings-group">
+            <label for="unit-score">
+              ユニットスコア
+              <input id="unit-score" type="text" inputmode="numeric" pattern="[0-9,]*" value="0" autocomplete="off">
+              <span class="field-help">おおよそのユニットスコアを入力してください。</span>
+            </label>
+            <div id="multi-score-field" class="multi-score-group" hidden>
+              <label for="multi-score-rank">
+                全体スコア
+                <div class="multi-score-select-wrap">
+                  <select id="multi-score-rank">
+                    <option value="S+9">S+9（2500万）</option>
+                    <option value="S+8">S+8（2250万）</option>
+                    <option value="S+7">S+7（2000万）</option>
+                    <option value="S+6">S+6（1750万）</option>
+                    <option value="S+5">S+5（1500万）</option>
+                    <option value="S+4">S+4（1250万）</option>
+                    <option value="S+3">S+3（1000万）</option>
+                    <option value="S+2">S+2（750万）</option>
+                    <option value="custom" selected>任意の数値を入力</option>
+                  </select>
+                  <input id="multi-score" class="multi-score-custom-input" type="text" inputmode="numeric" pattern="[0-9,]*" value="" placeholder="任意の数値を入力してください" aria-label="任意の全体スコア" autocomplete="off" hidden>
+                </div>
+                <span id="multi-score-help" class="field-help" hidden>おおよその全体スコアを入力してください。</span>
+              </label>
+            </div>
           </div>
-          <div class="range-result">
-            <span>上振れ</span>
-            <strong><output id="high-result">—</output><small> pt</small></strong>
+
+          <div class="bonus-settings-group">
+            <label for="bonus-percent">
+              獲得ボーナス
+              <input id="bonus-percent" type="text" inputmode="numeric" pattern="[0-9,]*" value="" autocomplete="off">
+            </label>
+            <label for="song-rate">
+              曲長ボーナス
+              <select id="song-rate"></select>
+            </label>
+            <label for="boost-count">
+              ブースト数
+              <select id="boost-count">
+                <option value="0">0炊き</option>
+                <option value="1" selected>1炊き</option>
+                <option value="2">2炊き</option>
+                <option value="3">3炊き</option>
+                <option value="5">5炊き</option>
+                <option value="10">10炊き</option>
+              </select>
+            </label>
+            <label for="holopass">
+              ホロパスポート
+              <select id="holopass">
+                <option value="1">なし</option>
+                <option value="2" selected>あり</option>
+              </select>
+            </label>
+            <p class="field-help bonus-note">曲長ボーナスと炊き数を合わせてください。</p>
           </div>
+        </fieldset>
+
+        <fieldset class="calculation-settings">
+          <legend>イベントポイント計算</legend>
+          <output id="point-result" hidden>—</output>
+          <div class="range-results" aria-label="ポイント予測">
+            <h3>ポイント予測</h3>
+            <div class="range-results-grid">
+              <div class="range-result">
+                <span>下振れ</span>
+                <strong><output id="low-result">—</output><small> pt</small></strong>
+              </div>
+              <div class="range-result">
+                <span>上振れ</span>
+                <strong><output id="high-result">—</output><small> pt</small></strong>
+              </div>
+            </div>
+          </div>
+          <p class="field-help point-prediction-help">割り出した計算値はユニットスコアからおおよその値が出るため、誤差が出ます。<br>参考程度に見てください。</p>
+          <p id="point-error" class="point-error" role="alert"></p>
+        </fieldset>
+
+        <fieldset class="calculation-settings live-count-settings">
+          <legend>ライブ回数計算</legend>
+          <label for="target-score">
+            希望スコア
+            <input id="target-score" type="text" inputmode="numeric" pattern="[0-9,]*" value="" autocomplete="off">
+          </label>
+          <div class="formation-summary live-count-result" aria-live="polite">
+            <span>ライブ回数</span>
+            <strong><output id="live-count-result">—</output></strong>
+          </div>
+          <p class="field-help live-count-note">±5回ほど誤差が出ている可能性があります。<br>おおよその目安で調整してください。</p>
+          <p id="live-count-error" class="point-error" role="alert"></p>
+        </fieldset>
+      </div>
+    </section>
+
+    <section class="page-panel" id="bonus-page" role="tabpanel" aria-labelledby="bonus-tab" data-page-panel="bonus" hidden>
+      <fieldset class="event-settings">
+        <legend>イベント選択</legend>
+        <div class="event-controls">
+          <label class="event-type-control" for="bonus-event-mode">
+            イベント種類
+            <select id="bonus-event-mode">
+              <option value="">イベントを選択してください。</option>
+              <option value="rally">ポイントラリー</option>
+              <option value="spotlight">スコアアタック</option>
+            </select>
+          </label>
         </div>
+      </fieldset>
+      <div id="bonus-content" hidden>
+        <fieldset class="team-settings">
+          <div class="card-list-summary">
+            <div class="formation-summary" aria-live="polite">
+              <span>イベント獲得ボーナス</span>
+              <strong id="formation-bonus">0%</strong>
+            </div>
+          </div>
+          <div id="character-list" class="character-grid"></div>
+        </fieldset>
       </div>
-      <p class="field-help point-prediction-help">割り出した計算値はユニットスコアからおおよその値が出るため、誤差が出ます。<br>参考程度に見てください。</p>
-      <p id="point-error" class="point-error" role="alert"></p>
-    </fieldset>
+    </section>
 
-    <div id="spotlight-validation-root"></div>
+    <section class="page-panel" id="validation-page" role="tabpanel" aria-labelledby="validation-tab" data-page-panel="validation" hidden>
+      <fieldset class="event-settings">
+        <legend>イベント選択</legend>
+        <div class="event-controls">
+          <label class="event-type-control validation-event-control" for="validation-event-mode">
+            イベント種類
+            <select id="validation-event-mode">
+              <option value="">イベントを選択してください。</option>
+              <option value="rally">ポイントラリー</option>
+              <option value="spotlight">スコアアタック</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+      <div id="validation-content" hidden>
+        <div id="spotlight-validation-root"></div>
+      </div>
+    </section>
   </main>
   <script src="script.js"></script>
   <script src="xlsx-import.js"></script>

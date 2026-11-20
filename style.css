@@ -112,6 +112,37 @@ body[data-theme="dark"] {
   padding: 0 22px;
 }
 
+.page-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.page-tab {
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--primary);
+  font-size: clamp(0.82rem, 1.4vw, 1rem);
+  white-space: nowrap;
+}
+
+.page-tab:hover:not(.is-active) {
+  background: var(--accent-soft);
+}
+
+.page-tab.is-active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+}
+
+.page-tab-label-mobile {
+  display: none;
+}
+
 fieldset {
   min-width: 0;
   margin: 0 0 20px;
@@ -236,6 +267,32 @@ button:hover {
   font-size: 1.65rem;
 }
 
+.live-count-result {
+  margin-top: 12px;
+}
+
+.multi-score-select-wrap {
+  position: relative;
+}
+
+#unit-score,
+#multi-score-rank {
+  height: 47px;
+}
+
+.multi-score-custom-input:not([hidden]) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: calc(100% - 42px);
+  height: 47px;
+  padding: 10px 12px;
+  border-right: 0;
+  border-radius: 8px 0 0 8px;
+  font-size: clamp(0.75rem, 4vw, 1rem);
+}
+
 .section-description {
   margin: 0;
   color: var(--muted);
@@ -300,19 +357,12 @@ button:hover {
   font-weight: 400;
 }
 
+.live-count-note {
+  margin: 4px 0 0;
+}
+
 [hidden] {
   display: none !important;
-}
-
-.reset-button {
-  width: 100%;
-  background: var(--surface-muted);
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-
-.reset-button:hover {
-  background: var(--accent-soft);
 }
 
 .bonus-settings-group {
@@ -327,7 +377,6 @@ button:hover {
 .bonus-note {
   grid-column: 1 / -1;
   margin: 0;
-  font-size: 0.9rem;
 }
 
 .point-error {
@@ -335,6 +384,10 @@ button:hover {
   margin: 8px 0 0;
   color: var(--danger);
   text-align: center;
+}
+
+.point-error:empty {
+  display: none;
 }
 
 .range-results {
@@ -392,6 +445,14 @@ button:hover {
 .validation-note {
   margin: 0 0 14px;
   color: var(--muted);
+}
+
+.validation-description {
+  margin-bottom: 0;
+}
+
+.validation-description + .validation-note {
+  margin-bottom: 8px;
 }
 
 .validation-event-control {
@@ -710,6 +771,25 @@ button:hover {
   .calculator {
     margin: 18px auto 36px;
     padding: 0 14px;
+  }
+
+  .page-tabs {
+    gap: 5px;
+    margin-bottom: 16px;
+  }
+
+  .page-tab {
+    min-height: 42px;
+    padding: 8px 4px;
+    font-size: clamp(0.68rem, 3.2vw, 0.82rem);
+  }
+
+  .page-tab-label-desktop {
+    display: none;
+  }
+
+  .page-tab-label-mobile {
+    display: inline;
   }
 
   fieldset {

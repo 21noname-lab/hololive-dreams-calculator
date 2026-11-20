@@ -13,7 +13,7 @@
     day: "2-digit"
   });
   const EVENT_LABELS = {
-    spotlight: "スポットライト",
+    spotlight: "スコアアタック",
     rally: "ポイントラリー"
   };
   const root = document.querySelector("#spotlight-validation-root");
@@ -34,37 +34,29 @@
 
   root.innerHTML = `
     <fieldset class="spotlight-validation">
-      <legend>実測データの検証</legend>
       <p class="validation-description">
         実測値を記録し、現在の計算機による予測値との差を比較します。
       </p>
       <p class="validation-note">
         差分は「予測 − 実測」です。
       </p>
-      <label class="validation-event-control" for="validation-event-mode">
-        イベント
-        <select id="validation-event-mode">
-          <option value="spotlight">スポットライト</option>
-          <option value="rally">ポイントラリー</option>
-        </select>
-      </label>
       <form id="validation-record-form">
         <div class="validation-form-grid">
           <label for="validation-personal-score">
             リザルトスコア
-            <input id="validation-personal-score" type="number" min="0" step="1" required>
+            <input id="validation-personal-score" type="text" inputmode="numeric" pattern="[0-9,]*" autocomplete="off" required>
           </label>
           <label for="validation-multi-score">
             マルチスコア
-            <input id="validation-multi-score" type="number" min="0" step="1" required>
+            <input id="validation-multi-score" type="text" inputmode="numeric" pattern="[0-9,]*" autocomplete="off" required>
           </label>
           <label for="validation-actual-points">
             獲得pt
-            <input id="validation-actual-points" type="number" min="0" step="1" required>
+            <input id="validation-actual-points" type="text" inputmode="numeric" pattern="[0-9,]*" autocomplete="off" required>
           </label>
           <label for="validation-bonus-percent">
             獲得ボーナス
-            <input id="validation-bonus-percent" type="number" min="0" step="1" required>
+            <input id="validation-bonus-percent" type="text" inputmode="numeric" pattern="[0-9,]*" autocomplete="off" required>
           </label>
           <label for="validation-song-rate">
             曲長ボーナス
@@ -220,7 +212,7 @@
   const analysisContent = root.querySelector("#validation-analysis-content");
   const importFile = root.querySelector("#validation-import-file");
   const xlsxImportFile = root.querySelector("#validation-xlsx-import-file");
-  const validationEventMode = root.querySelector("#validation-event-mode");
+  const validationEventMode = document.querySelector("#validation-event-mode");
   const importPreview = root.querySelector("#validation-import-preview");
   const importSummary = root.querySelector("#validation-import-summary");
   const importPreviewList = root.querySelector("#validation-import-preview-list");
@@ -497,6 +489,11 @@
 
   function renderRecords() {
     recordList.replaceChildren();
+    if (!validationEventMode.value) {
+      recordCount.textContent = "";
+      deleteEventButton.disabled = true;
+      return;
+    }
 
     const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
     recordCount.textContent = `${EVENT_LABELS[validationEventMode.value]}: ${formatNumber(visibleRecords.length)}件`;
@@ -669,6 +666,8 @@
 
   function renderAnalysis() {
     analysisContent.replaceChildren();
+    if (!validationEventMode.value) return;
+
     const visibleRecords = records.filter((record) => record.eventType === validationEventMode.value);
 
     if (visibleRecords.length < MIN_ANALYSIS_RECORDS) {
@@ -760,7 +759,7 @@
     const input = root.querySelector(selector);
     const raw = input.value.trim();
     if (raw === "") throw new Error(`${label}を入力してください。`);
-    const value = Number(raw);
+    const value = Number(raw.replace(/,/g, ""));
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new Error(`${label}は0以上の整数で入力してください。`);
     }
@@ -1276,7 +1275,7 @@
               const duplicateKey = xlsxDuplicateKey(item.record);
               if (existingKeys.has(duplicateKey)) {
                 item.status = "duplicate";
-                reasons.push("既存のスポットライト記録と内容が重複しています。");
+                reasons.push("既存のスコアアタック記録と内容が重複しています。");
               } else if (sourceKeys.has(duplicateKey)) {
                 item.status = "duplicate";
                 reasons.push("ファイル内の別の記録と内容が重複しています。");
@@ -1337,7 +1336,7 @@
     }, { eligible: 0, held: 0, duplicate: 0, excluded: 0 });
 
     xlsxImportSummary.textContent =
-      `ファイル: ${fileName} / イベント: スポットライト / 全体: ${items.length}件 / 登録可能: ${counts.eligible}件 / 保留: ${counts.held}件 / 重複: ${counts.duplicate}件 / 登録対象外: ${counts.excluded}件`;
+      `ファイル: ${fileName} / イベント: スコアアタック / 全体: ${items.length}件 / 登録可能: ${counts.eligible}件 / 保留: ${counts.held}件 / 重複: ${counts.duplicate}件 / 登録対象外: ${counts.excluded}件`;
     xlsxSheetNames.textContent = `読み込んだシート名: ${sheetNames.join("、")}`;
     xlsxSheetList.replaceChildren();
     sheets.forEach((sheet) => {
@@ -1446,7 +1445,7 @@
       clearXlsxImportPreview();
       render();
       showStatus(
-        `スポットライトの実測データ${additions.length}件を追加しました。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は登録していません。`
+        `スコアアタックの実測データ${additions.length}件を追加しました。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は登録していません。`
       );
     }
   }

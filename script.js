@@ -40,6 +40,17 @@ const BOOST_MULTIPLIERS = {
   10: 56
 };
 
+const SCORE_RANKS = {
+  "S+9": { totalScore: 25000000 },
+  "S+8": { totalScore: 22500000 },
+  "S+7": { totalScore: 20000000 },
+  "S+6": { totalScore: 17500000 },
+  "S+5": { totalScore: 15000000 },
+  "S+4": { totalScore: 12500000 },
+  "S+3": { totalScore: 10000000 },
+  "S+2": { totalScore: 7500000 }
+};
+
 const STORAGE_KEY = "hololiveDreamsPointCalculator";
 const characterList = document.querySelector("#character-list");
 const CHARACTER_STATUSES = [
@@ -120,19 +131,6 @@ function updateCharacterStatusOptions(eventType) {
   });
 }
 
-function normalizeCharacterStatuses(eventType) {
-  if (!characterList) return;
-
-  characterList.querySelectorAll(".character-status").forEach((select, index) => {
-    const allowedStatuses = eventType === "spotlight" && index > 0
-      ? CHARACTER_STATUSES.filter((status) => status.value !== "pu")
-      : CHARACTER_STATUSES;
-    if (!allowedStatuses.some((status) => status.value === select.value)) {
-      select.value = eventType === "spotlight" && index > 0 ? "target" : "pu";
-    }
-  });
-}
-
 function normalizeConvValue(value) {
   const savedValue = String(value).trim();
   if (savedValue === "0凸" || savedValue === "無凸" || savedValue === "無凸（0凸）") return "0";
@@ -165,8 +163,35 @@ function getSafeNumber(id) {
   const input = document.querySelector(id);
   if (!input) return null;
   if (input.value.trim() === "") return null;
-  const value = Number(input.value);
+  const value = Number(input.value.replace(/,/g, ""));
   return Number.isFinite(value) ? value : null;
+}
+
+function formatNumericInput(input) {
+  if (input.type !== "text") return;
+  const raw = input.value;
+  if (!/^[\d,]*$/.test(raw)) return;
+
+  const selectionStart = input.selectionStart;
+  const selectionEnd = input.selectionEnd;
+  const digitsBeforeStart = raw.slice(0, selectionStart).replace(/\D/g, "").length;
+  const digitsBeforeEnd = raw.slice(0, selectionEnd).replace(/\D/g, "").length;
+  const formatted = raw.replace(/,/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (formatted === raw) return;
+
+  input.value = formatted;
+  if (selectionStart !== null && selectionEnd !== null) {
+    const getPosition = (digitCount) => {
+      if (digitCount === 0) return 0;
+      let digitsSeen = 0;
+      for (let index = 0; index < formatted.length; index += 1) {
+        if (/\d/.test(formatted[index])) digitsSeen += 1;
+        if (digitsSeen === digitCount) return index + 1;
+      }
+      return formatted.length;
+    };
+    input.setSelectionRange(getPosition(digitsBeforeStart), getPosition(digitsBeforeEnd));
+  }
 }
 
 function calculateEventPoints({ liveMode, unitScore, multiScore, scoreCorrection, bonus, passMultiplier, songRate, boostRate }) {
@@ -192,6 +217,26 @@ function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorre
   });
 
   return {
+    manualLow: calculateScenario(1.2),
+    manualHigh: calculateScenario(1.3),
+    autoLow: calculateScenario(0.9),
+    autoHigh: calculateScenario(1.0)
+  };
+}
+
+function calculatePointRange({ liveMode, unitScore, multiScore, scoreCorrection, bonus, passMultiplier, songRate, boostRate }) {
+  const calculateScenario = (unitScoreMultiplier) => calculateEventPoints({
+    liveMode,
+    unitScore: unitScore * unitScoreMultiplier,
+    multiScore,
+    scoreCorrection,
+    bonus,
+    passMultiplier,
+    songRate,
+    boostRate
+  });
+
+  return {
     low: calculateScenario(1.2),
     high: calculateScenario(1.5)
   };
@@ -199,7 +244,7 @@ function calculateAdditionalPoints({ liveMode, unitScore, multiScore, scoreCorre
 
 function validateLiveInputs(liveMode) {
   const unitScore = getSafeNumber("#unit-score");
-  const multiScore = getSafeNumber("#multi-score");
+  const multiScore = getSelectedMultiScore();
   const bonusInput = document.querySelector("#bonus-percent");
   const bonusPercent = bonusInput && bonusInput.value.trim() === ""
     ? 0
@@ -208,7 +253,7 @@ function validateLiveInputs(liveMode) {
   const boostCount = getSafeNumber("#boost-count");
   const boostRate = BOOST_MULTIPLIERS[boostCount];
 
-  if (unitScore === null || unitScore < 0) return { error: "リザルトスコアを0以上で入力してください。" };
+  if (unitScore === null || unitScore < 0) return { error: "ユニットスコアを0以上で入力してください。" };
   if (liveMode === "multi" && (multiScore === null || multiScore < 0)) {
     return { error: "全体スコアを0以上で入力してください。" };
   }
@@ -237,15 +282,70 @@ function updateLiveDisplay(liveMode) {
   if (multiField) multiField.hidden = !isMulti;
 }
 
+function getSelectedMultiScore() {
+  const rank = document.querySelector("#multi-score-rank").value;
+  if (rank === "custom") return getSafeNumber("#multi-score");
+  return SCORE_RANKS[rank]?.totalScore ?? null;
+}
+
+function updateMultiScoreDisplay() {
+  const rank = document.querySelector("#multi-score-rank").value;
+  const customInput = document.querySelector("#multi-score");
+  const customHelp = document.querySelector("#multi-score-help");
+  customInput.hidden = rank !== "custom";
+  customHelp.hidden = rank !== "custom";
+}
+
+function updateLiveCount(pointRange) {
+  const input = document.querySelector("#target-score");
+  const result = document.querySelector("#live-count-result");
+  const error = document.querySelector("#live-count-error");
+  error.textContent = "";
+
+  if (!pointRange || input.value.trim() === "") {
+    result.textContent = "—";
+    return;
+  }
+
+  const targetScore = getSafeNumber("#target-score");
+  if (targetScore === null || targetScore < 0) {
+    result.textContent = "—";
+    error.textContent = "希望スコアを0以上で入力してください。";
+    return;
+  }
+  if (pointRange.high <= 0) {
+    result.textContent = "—";
+    error.textContent = "イベントポイントの予測値を確認してください。";
+    return;
+  }
+
+  const averagePoints = (pointRange.low + pointRange.high) / 2;
+  const liveCount = Math.ceil(targetScore / averagePoints);
+  result.textContent = liveCount.toLocaleString("ja-JP");
+}
+
+function updateValidationDisplay() {
+  const eventType = document.querySelector("#validation-event-mode").value;
+  document.querySelector("#validation-content").hidden = !eventType;
+}
+
 function updateCalculator() {
   if (!document.querySelector("#event-mode") || !document.querySelector("#point-result")) return;
   const eventType = document.querySelector("#event-mode").value;
+  const pointContent = document.querySelector("#point-content");
+  if (pointContent) pointContent.hidden = !eventType;
+  if (!eventType) {
+    document.querySelector("#point-error").textContent = "";
+    document.querySelector("#point-result").textContent = "—";
+    ["low-result", "high-result"].forEach((id) => {
+      document.querySelector(`#${id}`).textContent = "—";
+    });
+    updateLiveCount(null);
+    return;
+  }
   const eventSetting = EVENT_TYPES[eventType];
   const mode = eventSetting.rateTable;
   const liveMode = document.querySelector("#live-mode").value;
-  normalizeCharacterStatuses(eventType);
-  const formationBonus = calculateFormationBonus(mode, getCharacterSettings());
-  document.querySelector("#formation-bonus").textContent = `${formationBonus}%`;
   updateLiveDisplay(liveMode);
 
   const values = validateLiveInputs(liveMode);
@@ -256,8 +356,9 @@ function updateCalculator() {
     errorElement.textContent = values.error;
     resultElement.textContent = "—";
     ["low-result", "high-result"].forEach((id) => {
-      document.querySelector("#" + id).textContent = "—";
+      document.querySelector(`#${id}`).textContent = "—";
     });
+    updateLiveCount(null);
     return;
   }
 
@@ -275,7 +376,7 @@ function updateCalculator() {
   });
   resultElement.textContent = points.toLocaleString("ja-JP");
 
-  const additionalPoints = calculateAdditionalPoints({
+  const pointRange = calculatePointRange({
     liveMode,
     unitScore: values.unitScore,
     multiScore: values.multiScore,
@@ -285,8 +386,32 @@ function updateCalculator() {
     songRate: values.songRate,
     boostRate: values.boostRate
   });
-  document.querySelector("#low-result").textContent = additionalPoints.low.toLocaleString("ja-JP");
-  document.querySelector("#high-result").textContent = additionalPoints.high.toLocaleString("ja-JP");
+  document.querySelector("#low-result").textContent = pointRange.low.toLocaleString("ja-JP");
+  document.querySelector("#high-result").textContent = pointRange.high.toLocaleString("ja-JP");
+  updateLiveCount(pointRange);
+}
+
+function updateBonusDisplay() {
+  const eventType = document.querySelector("#bonus-event-mode").value;
+  const bonusContent = document.querySelector("#bonus-content");
+  bonusContent.hidden = !eventType;
+  if (!eventType) return;
+
+  updateCharacterStatusOptions(eventType);
+  const mode = EVENT_TYPES[eventType].rateTable;
+  const formationBonus = calculateFormationBonus(mode, getCharacterSettings());
+  document.querySelector("#formation-bonus").textContent = `${formationBonus}%`;
+}
+
+function setActivePage(pageName) {
+  document.querySelectorAll(".page-tab").forEach((tab) => {
+    const isActive = tab.dataset.page === pageName;
+    tab.classList.toggle("is-active", isActive);
+    tab.setAttribute("aria-selected", String(isActive));
+  });
+  document.querySelectorAll("[data-page-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.pagePanel !== pageName;
+  });
 }
 
 function showStorageError(message, error) {
@@ -333,14 +458,25 @@ function restoreSettings() {
   }
   if (!saved || typeof saved !== "object") return;
 
-  ["event-mode", "live-mode", "song-rate", "boost-count", "holopass", "theme-mode"].forEach((id) => {
+  ["live-mode", "multi-score-rank", "song-rate", "boost-count", "holopass", "theme-mode"].forEach((id) => {
     applySavedSelectValue(`#${id}`, saved[id]);
   });
-  updateCharacterStatusOptions(document.querySelector("#event-mode").value);
+  if (saved["event-mode-selected"] === true) {
+    applySavedSelectValue("#event-mode", saved["event-mode"]);
+  }
+  if (saved["bonus-event-mode-selected"] === true) {
+    applySavedSelectValue("#bonus-event-mode", saved["bonus-event-mode"]);
+  }
+  if (saved["validation-event-mode-selected"] === true) {
+    applySavedSelectValue("#validation-event-mode", saved["validation-event-mode"]);
+  }
 
-  ["unit-score", "multi-score", "bonus-percent"].forEach((id) => {
+  ["unit-score", "multi-score", "bonus-percent", "target-score"].forEach((id) => {
     const input = document.querySelector(`#${id}`);
-    if (input && typeof saved[id] === "string") input.value = saved[id];
+    if (input && typeof saved[id] === "string") {
+      input.value = saved[id];
+      formatNumericInput(input);
+    }
   });
 
   if (themeMode) document.body.dataset.theme = themeMode.value;
@@ -364,10 +500,17 @@ function restoreSettings() {
 function saveSettings() {
   const saved = {
     "event-mode": document.querySelector("#event-mode").value,
+    "event-mode-selected": document.querySelector("#event-mode").value !== "",
+    "bonus-event-mode": document.querySelector("#bonus-event-mode").value,
+    "bonus-event-mode-selected": document.querySelector("#bonus-event-mode").value !== "",
+    "validation-event-mode": document.querySelector("#validation-event-mode").value,
+    "validation-event-mode-selected": document.querySelector("#validation-event-mode").value !== "",
     "live-mode": document.querySelector("#live-mode").value,
     "unit-score": document.querySelector("#unit-score").value,
     "multi-score": document.querySelector("#multi-score").value,
+    "multi-score-rank": document.querySelector("#multi-score-rank").value,
     "bonus-percent": document.querySelector("#bonus-percent").value,
+    "target-score": document.querySelector("#target-score").value,
     "song-rate": document.querySelector("#song-rate").value,
     "boost-count": document.querySelector("#boost-count").value,
     holopass: document.querySelector("#holopass").value,
@@ -383,19 +526,19 @@ function saveSettings() {
   }
 }
 
-function resetSettings() {
-  document.querySelector("#unit-score").value = "0";
-  document.querySelector("#multi-score").value = "0";
-  document.querySelector("#bonus-percent").value = "";
-  updateCalculator();
-  saveSettings();
-}
-
 createCharacterInputs();
 createSongRateOptions();
 const themeMode = document.querySelector("#theme-mode");
-updateCharacterStatusOptions(document.querySelector("#event-mode").value);
+updateCharacterStatusOptions("rally");
 restoreSettings();
+updateBonusDisplay();
+updateMultiScoreDisplay();
+updateValidationDisplay();
+document.addEventListener("input", (event) => {
+  if (event.target instanceof HTMLInputElement && event.target.inputMode === "numeric") {
+    formatNumericInput(event.target);
+  }
+}, true);
 if (themeMode) {
   themeMode.addEventListener("change", () => {
     document.body.dataset.theme = themeMode.value;
@@ -403,15 +546,36 @@ if (themeMode) {
 }
 document.querySelectorAll("input, select").forEach((control) => {
   control.addEventListener("input", () => {
-    if (control.id === "event-mode") updateCharacterStatusOptions(control.value);
-    updateCalculator();
+    if (control.id === "multi-score-rank") updateMultiScoreDisplay();
+    if (control.id === "validation-event-mode") updateValidationDisplay();
+    if (control.id !== "bonus-event-mode"
+      && control.id !== "validation-event-mode"
+      && control.id !== "theme-mode") updateCalculator();
+    if (control.classList.contains("character-status")
+      || control.classList.contains("character-rarity")
+      || control.classList.contains("character-conv")) {
+      updateBonusDisplay();
+    }
     saveSettings();
   });
   control.addEventListener("change", () => {
-    if (control.id === "event-mode") updateCharacterStatusOptions(control.value);
-    updateCalculator();
+    if (control.id === "multi-score-rank") updateMultiScoreDisplay();
+    if (control.id === "bonus-event-mode") {
+      updateBonusDisplay();
+    } else if (control.id === "validation-event-mode") {
+      updateValidationDisplay();
+    } else if (control.id !== "theme-mode") {
+      updateCalculator();
+    }
+    if (control.classList.contains("character-status")
+      || control.classList.contains("character-rarity")
+      || control.classList.contains("character-conv")) {
+      updateBonusDisplay();
+    }
     saveSettings();
   });
 });
-document.querySelector("#reset-settings").addEventListener("click", resetSettings);
+document.querySelectorAll(".page-tab").forEach((tab) => {
+  tab.addEventListener("click", () => setActivePage(tab.dataset.page));
+});
 updateCalculator();
