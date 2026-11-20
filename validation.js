@@ -13,7 +13,7 @@
     day: "2-digit"
   });
   const EVENT_LABELS = {
-    spotlight: "スコアアタック",
+    spotlight: "スポットライト",
     rally: "ポイントラリー"
   };
   const root = document.querySelector("#spotlight-validation-root");
@@ -1275,7 +1275,7 @@
               const duplicateKey = xlsxDuplicateKey(item.record);
               if (existingKeys.has(duplicateKey)) {
                 item.status = "duplicate";
-                reasons.push("既存のスコアアタック記録と内容が重複しています。");
+                reasons.push("既存のスポットライト記録と内容が重複しています。");
               } else if (sourceKeys.has(duplicateKey)) {
                 item.status = "duplicate";
                 reasons.push("ファイル内の別の記録と内容が重複しています。");
@@ -1336,7 +1336,7 @@
     }, { eligible: 0, held: 0, duplicate: 0, excluded: 0 });
 
     xlsxImportSummary.textContent =
-      `ファイル: ${fileName} / イベント: スコアアタック / 全体: ${items.length}件 / 登録可能: ${counts.eligible}件 / 保留: ${counts.held}件 / 重複: ${counts.duplicate}件 / 登録対象外: ${counts.excluded}件`;
+      `ファイル: ${fileName} / イベント: スポットライト / 全体: ${items.length}件 / 登録可能: ${counts.eligible}件 / 保留: ${counts.held}件 / 重複: ${counts.duplicate}件 / 登録対象外: ${counts.excluded}件`;
     xlsxSheetNames.textContent = `読み込んだシート名: ${sheetNames.join("、")}`;
     xlsxSheetList.replaceChildren();
     sheets.forEach((sheet) => {
@@ -1445,7 +1445,7 @@
       clearXlsxImportPreview();
       render();
       showStatus(
-        `スコアアタックの実測データ${additions.length}件を追加しました。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は登録していません。`
+        `スポットライトの実測データ${additions.length}件を追加しました。保留${heldRecords}件、重複${previewDuplicates + skippedDuplicates}件は登録していません。`
       );
     }
   }
