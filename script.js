@@ -299,29 +299,44 @@ function updateMultiScoreDisplay() {
 function updateLiveCount(pointRange) {
   const input = document.querySelector("#target-score");
   const result = document.querySelector("#live-count-result");
+  const lowResult = document.querySelector("#low-live-count-result");
   const error = document.querySelector("#live-count-error");
   error.textContent = "";
 
   if (!pointRange || input.value.trim() === "") {
     result.textContent = "—";
+    lowResult.textContent = "—";
     return;
   }
 
   const targetScore = getSafeNumber("#target-score");
   if (targetScore === null || targetScore < 0) {
     result.textContent = "—";
+    lowResult.textContent = "—";
     error.textContent = "希望スコアを0以上で入力してください。";
     return;
   }
-  if (pointRange.high <= 0) {
+  if (!Number.isFinite(pointRange.high)
+    || !Number.isFinite(pointRange.low)
+    || pointRange.high <= 0
+    || pointRange.low <= 0) {
     result.textContent = "—";
+    lowResult.textContent = "—";
     error.textContent = "イベントポイントの予測値を確認してください。";
     return;
   }
 
   const averagePoints = (pointRange.low + pointRange.high) / 2;
   const liveCount = Math.ceil(targetScore / averagePoints);
+  const lowLiveCount = Math.ceil(targetScore / pointRange.low);
+  if (!Number.isFinite(liveCount) || !Number.isFinite(lowLiveCount)) {
+    result.textContent = "—";
+    lowResult.textContent = "—";
+    error.textContent = "希望スコアまたはイベントポイントの予測値を確認してください。";
+    return;
+  }
   result.textContent = liveCount.toLocaleString("ja-JP");
+  lowResult.textContent = lowLiveCount.toLocaleString("ja-JP");
 }
 
 function updateValidationDisplay() {

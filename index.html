@@ -26,6 +26,10 @@
   </header>
 
   <main class="calculator">
+    <nav class="site-page-tabs site-page-tabs-calculator" aria-label="ページ切り替え">
+      <a class="site-page-tab" href="history.html">過去のイベントデータ</a>
+    </nav>
+
     <p id="storage-error" class="storage-error" role="alert" hidden></p>
 
     <nav class="page-tabs" aria-label="ページ切り替え" role="tablist">
@@ -74,6 +78,7 @@
               ユニットスコア
               <input id="unit-score" type="text" inputmode="numeric" pattern="[0-9,]*" value="0" autocomplete="off">
               <span class="field-help">おおよそのユニットスコアを入力してください。</span>
+              <span class="field-help">楽曲スコアではなく、素スコアで入力してください。</span>
             </label>
             <div id="multi-score-field" class="multi-score-group" hidden>
               <label for="multi-score-rank">
@@ -134,9 +139,12 @@
           <div class="range-results" aria-label="ポイント予測">
             <h3>ポイント予測</h3>
             <div class="range-results-grid">
-              <div class="range-result">
-                <span>下振れ</span>
-                <strong><output id="low-result">—</output><small> pt</small></strong>
+              <div class="range-result-column">
+                <div class="range-result">
+                  <span>下振れ</span>
+                  <strong><output id="low-result">—</output><small> pt</small></strong>
+                </div>
+                <p class="field-help low-live-count-note">※下振れ時の最大回数：<output id="low-live-count-result">—</output>回</p>
               </div>
               <div class="range-result">
                 <span>上振れ</span>
