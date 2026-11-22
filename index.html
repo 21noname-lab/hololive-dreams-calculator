@@ -107,9 +107,14 @@
               獲得ボーナス
               <input id="bonus-percent" type="text" inputmode="numeric" pattern="[0-9,]*" value="" autocomplete="off">
             </label>
-            <label for="song-rate">
-              曲長ボーナス
-              <select id="song-rate"></select>
+            <label for="song-name">
+              曲名
+              <select id="song-name">
+                <option value="PU選曲" selected>PU選曲</option>
+                <option value="We are GAMERS!!!">We are GAMERS!!!</option>
+                <option value="奏">奏</option>
+                <option value="恋愛サーキュレーション">恋愛サーキュレーション</option>
+              </select>
             </label>
             <label for="boost-count">
               ブースト数
@@ -121,6 +126,10 @@
                 <option value="5">5炊き</option>
                 <option value="10">10炊き</option>
               </select>
+            </label>
+            <label for="song-rate" hidden>
+              曲長ボーナス
+              <select id="song-rate"></select>
             </label>
             <label for="holopass">
               ホロパスポート

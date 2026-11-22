@@ -61,6 +61,10 @@
   width: auto;
 }
 
+.history-rank-column {
+  width: 3rem;
+}
+
 .history-points-column {
   width: 9rem;
 }
@@ -91,6 +95,89 @@
   text-align: center;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+}
+
+.history-table.is-spotlight {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.history-table.is-rally {
+  width: fit-content;
+  max-width: 100%;
+  table-layout: auto;
+}
+
+.history-table.is-rally .history-ranking-row {
+  border: 0;
+}
+
+.history-table.is-rally .history-rank-cell {
+  width: 3rem;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 1rem;
+}
+
+.history-table.is-rally .history-name-cell {
+  max-width: 32rem;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 1rem;
+}
+
+.history-table.is-rally .history-points-cell {
+  width: 9rem;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 1rem;
+}
+
+.history-spotlight-pair {
+  padding: 8px;
+}
+
+.history-character-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.history-character-slot {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 8rem;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.history-rank-cell {
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-character-name {
+  min-width: 0;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-name-short {
+  display: none;
+}
+
+.history-character-points {
+  border: 0;
+  padding: 0;
 }
 
 .history-empty,
@@ -189,11 +276,53 @@
     width: auto;
   }
 
+  .history-rank-column {
+    width: 2rem;
+  }
+
   .history-points-column {
-    width: 9rem;
+    width: 6.5rem;
   }
 
   .history-table td {
     padding: 9px 8px;
+  }
+
+  .history-table.is-rally {
+    width: fit-content;
+    max-width: 100%;
+    table-layout: auto;
+  }
+
+  .history-table.is-rally .history-name-column,
+  .history-table.is-rally .history-name-cell {
+    max-width: 12rem;
+  }
+
+  .history-spotlight-pair {
+    padding: 4px 0;
+  }
+
+  .history-character-pair {
+    gap: 4px;
+  }
+
+  .history-character-slot {
+    grid-template-columns: 1.5rem minmax(0, 1fr) 6.5rem;
+    gap: 4px;
+    min-height: 42px;
+    padding: 6px 4px;
+  }
+
+  .history-name-full {
+    display: none;
+  }
+
+  .history-name-short {
+    display: inline;
+  }
+
+  .history-character-points {
+    font-size: 0.82rem;
   }
 }

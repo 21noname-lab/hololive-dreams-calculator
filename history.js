@@ -69,6 +69,11 @@
       validRecords.push({
         order: record.order,
         name: record.name.trim(),
+        shortName: selectedEvent === "spotlight"
+          && typeof record.shortName === "string"
+          && record.shortName.trim() !== ""
+            ? record.shortName.trim()
+            : record.name.trim(),
         points,
         sourceIndex: index
       });
@@ -98,9 +103,13 @@
     });
   }
 
-  function createRankingRow(record) {
+  function createRankingRow(record, rank) {
     const row = document.createElement("tr");
     row.className = "history-ranking-row";
+
+    const rankCell = document.createElement("td");
+    rankCell.className = "history-rank-cell";
+    rankCell.textContent = String(rank);
 
     const name = document.createElement("td");
     name.className = "history-name-cell";
@@ -111,7 +120,62 @@
     points.className = "history-points-cell";
     points.textContent = `${record.points.toLocaleString("ja-JP")}pt`;
 
-    row.append(name, points);
+    row.append(rankCell, name, points);
+    return row;
+  }
+
+  function createCharacterName(record) {
+    const name = document.createElement("div");
+    name.className = "history-character-name";
+    name.title = record.name;
+
+    const fullName = document.createElement("span");
+    fullName.className = "history-name-full";
+    fullName.textContent = record.name;
+
+    const shortName = document.createElement("span");
+    shortName.className = "history-name-short";
+    shortName.textContent = record.shortName;
+
+    name.append(fullName, shortName);
+    return name;
+  }
+
+  function createSpotlightCharacter(record, rank) {
+    const character = document.createElement("div");
+    character.className = "history-character-slot";
+
+    const rankCell = document.createElement("span");
+    rankCell.className = "history-rank-cell";
+    rankCell.textContent = String(rank);
+
+    const points = document.createElement("span");
+    points.className = "history-points-cell history-character-points";
+    points.textContent = `${record.points.toLocaleString("ja-JP")}pt`;
+
+    character.append(rankCell, createCharacterName(record), points);
+    return character;
+  }
+
+  function createSpotlightPairRow(sortedRecords, startIndex, sortMode) {
+    const row = document.createElement("tr");
+    row.className = "history-ranking-row history-spotlight-row";
+
+    const pairCell = document.createElement("td");
+    pairCell.colSpan = 3;
+    pairCell.className = "history-spotlight-pair";
+
+    const pair = document.createElement("div");
+    pair.className = "history-character-pair";
+
+    for (let index = startIndex; index < Math.min(startIndex + 2, sortedRecords.length); index += 1) {
+      const record = sortedRecords[index];
+      const rank = sortMode === "order" ? record.order : index + 1;
+      pair.appendChild(createSpotlightCharacter(record, rank));
+    }
+
+    pairCell.appendChild(pair);
+    row.appendChild(pairCell);
     return row;
   }
 
@@ -129,7 +193,19 @@
 
     const sortedRecords = sortRecords(records, sortSelect.value);
     const rows = document.createDocumentFragment();
-    sortedRecords.forEach((record) => rows.appendChild(createRankingRow(record)));
+    if (selectedEvent === "spotlight") {
+      for (let index = 0; index < sortedRecords.length; index += 2) {
+        rows.appendChild(createSpotlightPairRow(sortedRecords, index, sortSelect.value));
+      }
+    } else {
+      sortedRecords.forEach((record, index) => {
+        const rank = sortSelect.value === "order" ? record.order : index + 1;
+        rows.appendChild(createRankingRow(record, rank));
+      });
+    }
+    const table = rankingList.closest(".history-table");
+    table.classList.toggle("is-spotlight", selectedEvent === "spotlight");
+    table.classList.toggle("is-rally", selectedEvent === "rally");
     rankingList.replaceChildren(rows);
     emptyMessage.hidden = sortedRecords.length > 0;
   }

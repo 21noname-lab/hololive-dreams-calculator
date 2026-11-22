@@ -40,6 +40,16 @@ const BOOST_MULTIPLIERS = {
   10: 56
 };
 
+const SONG_RATE_BONUSES = {
+  "We are GAMERS!!!": { low: 40, one: 52, high: 48 },
+  "奏": { low: 40, one: 52, high: 48 },
+  "恋愛サーキュレーション": { low: 14, one: 18, high: 17 },
+  "PU選曲": { low: 42, one: 54, high: 50 }
+};
+
+const VALID_BOOST_COUNTS = ["0", "1", "2", "3", "5", "10"];
+const DEFAULT_SONG_NAME = "PU選曲";
+
 const SCORE_RANKS = {
   "S+9": { totalScore: 25000000 },
   "S+8": { totalScore: 22500000 },
@@ -59,18 +69,50 @@ const CHARACTER_STATUSES = [
   { value: "nonTarget", label: "対象外" }
 ];
 
-// 計算処理と画面更新を分離しやすい入力データ生成です。
 function createSongRateOptions() {
   const songRateSelect = document.querySelector("#song-rate");
   if (!songRateSelect) return;
 
-  for (let percent = 14; percent <= 54; percent += 1) {
+  const percentValues = new Set();
+  Object.values(SONG_RATE_BONUSES).forEach((bonus) => {
+    percentValues.add(bonus.low);
+    percentValues.add(bonus.one);
+    percentValues.add(bonus.high);
+  });
+
+  Array.from(percentValues).sort((left, right) => left - right).forEach((percent) => {
     const option = document.createElement("option");
     option.value = String(percent);
     option.textContent = `${percent}%`;
     songRateSelect.appendChild(option);
+  });
+}
+
+function updateSongRate() {
+  const songNameSelect = document.querySelector("#song-name");
+  const boostCountSelect = document.querySelector("#boost-count");
+  const songRateSelect = document.querySelector("#song-rate");
+  if (!songNameSelect || !boostCountSelect || !songRateSelect) return;
+
+  const songName = SONG_RATE_BONUSES[songNameSelect.value]
+    ? songNameSelect.value
+    : DEFAULT_SONG_NAME;
+  const boostCount = boostCountSelect.value;
+  const bonuses = SONG_RATE_BONUSES[songName];
+  let percent;
+
+  if (boostCount === "1") {
+    percent = bonuses.one;
+  } else if (boostCount === "2" || boostCount === "3") {
+    percent = bonuses.high;
+  } else if (VALID_BOOST_COUNTS.includes(boostCount)) {
+    percent = bonuses.low;
+  } else {
+    percent = bonuses.one;
   }
-  songRateSelect.value = "54";
+
+  songNameSelect.value = songName;
+  songRateSelect.value = String(percent);
 }
 
 function createCharacterInputs() {
@@ -473,9 +515,18 @@ function restoreSettings() {
   }
   if (!saved || typeof saved !== "object") return;
 
-  ["live-mode", "multi-score-rank", "song-rate", "boost-count", "holopass", "theme-mode"].forEach((id) => {
+  ["live-mode", "multi-score-rank", "holopass", "theme-mode"].forEach((id) => {
     applySavedSelectValue(`#${id}`, saved[id]);
   });
+  if (VALID_BOOST_COUNTS.includes(String(saved["boost-count"]))) {
+    applySavedSelectValue("#boost-count", String(saved["boost-count"]));
+  }
+  if (SONG_RATE_BONUSES[saved["song-name"]]) {
+    applySavedSelectValue("#song-name", saved["song-name"]);
+  } else {
+    applySavedSelectValue("#song-name", DEFAULT_SONG_NAME);
+  }
+  updateSongRate();
   if (saved["event-mode-selected"] === true) {
     applySavedSelectValue("#event-mode", saved["event-mode"]);
   }
@@ -526,6 +577,7 @@ function saveSettings() {
     "multi-score-rank": document.querySelector("#multi-score-rank").value,
     "bonus-percent": document.querySelector("#bonus-percent").value,
     "target-score": document.querySelector("#target-score").value,
+    "song-name": document.querySelector("#song-name").value,
     "song-rate": document.querySelector("#song-rate").value,
     "boost-count": document.querySelector("#boost-count").value,
     holopass: document.querySelector("#holopass").value,
@@ -546,6 +598,7 @@ createSongRateOptions();
 const themeMode = document.querySelector("#theme-mode");
 updateCharacterStatusOptions("rally");
 restoreSettings();
+updateSongRate();
 updateBonusDisplay();
 updateMultiScoreDisplay();
 updateValidationDisplay();
@@ -563,6 +616,7 @@ document.querySelectorAll("input, select").forEach((control) => {
   control.addEventListener("input", () => {
     if (control.id === "multi-score-rank") updateMultiScoreDisplay();
     if (control.id === "validation-event-mode") updateValidationDisplay();
+    if (control.id === "song-name" || control.id === "boost-count") updateSongRate();
     if (control.id !== "bonus-event-mode"
       && control.id !== "validation-event-mode"
       && control.id !== "theme-mode") updateCalculator();
@@ -575,6 +629,7 @@ document.querySelectorAll("input, select").forEach((control) => {
   });
   control.addEventListener("change", () => {
     if (control.id === "multi-score-rank") updateMultiScoreDisplay();
+    if (control.id === "song-name" || control.id === "boost-count") updateSongRate();
     if (control.id === "bonus-event-mode") {
       updateBonusDisplay();
     } else if (control.id === "validation-event-mode") {
