@@ -5,7 +5,7 @@ window.SPOTLIGHT_DATA = [
   {
     order: 1,
     name: "森カリオペ",
-    shortName: "",
+    shortName: "カリオペ",
     dream: 4450951,
     diamond: 1585853,
     platinum: 1048285
@@ -13,7 +13,7 @@ window.SPOTLIGHT_DATA = [
   {
     order: 2,
     name: "百鬼あやめ",
-    shortName: "",
+    shortName: "あやめ",
     dream: 9048025,
     diamond: 1994187,
     platinum: 1234126
@@ -21,7 +21,7 @@ window.SPOTLIGHT_DATA = [
   {
     order: 3,
     name: "クレイジー・オリー",
-    shortName: "",
+    shortName: "オリー",
     dream: 3026040,
     diamond: 1345293,
     platinum: 925198
@@ -29,7 +29,7 @@ window.SPOTLIGHT_DATA = [
   {
     order: 4,
     name: "姫森ルーナ",
-    shortName: "",
+    shortName: "ルーナ",
     dream: 4307412,
     diamond: 1411523,
     platinum: 937707
@@ -37,7 +37,7 @@ window.SPOTLIGHT_DATA = [
   {
     order: 5,
     name: "一伊那尓栖",
-    shortName: "",
+    shortName: "イナニス",
     dream: 4687823,
     diamond: 1487183,
     platinum: 983956
@@ -45,7 +45,7 @@ window.SPOTLIGHT_DATA = [
    {
     order: 6,
     name: "アキ・ローゼンタール",
-    shortName: "",
+    shortName: "アキ",
     dream: 5587461,
     diamond: 1794818,
     platinum: 1149802
@@ -53,7 +53,7 @@ window.SPOTLIGHT_DATA = [
    {
     order: 7,
     name: "シオリ・ノヴェラ",
-    shortName: "",
+    shortName: "シオリ",
     dream: 6626554,
     diamond: 1745514,
     platinum: 1098926
@@ -61,7 +61,7 @@ window.SPOTLIGHT_DATA = [
    {
     order: 8,
     name: "ラプラス・ダークネス",
-    shortName: "",
+    shortName: "ラプラス",
     dream: 7616047,
     diamond: 1683452,
     platinum: 1046242
@@ -69,7 +69,7 @@ window.SPOTLIGHT_DATA = [
    {
     order: 9,
     name: "アーニャ・メルフィッサ",
-    shortName: "",
+    shortName: "アーニャ",
     dream: 5799533,
     diamond: 1707265,
     platinum: 1107741
@@ -77,7 +77,7 @@ window.SPOTLIGHT_DATA = [
     {
     order: 10,
     name: "常闇トワ",
-    shortName: "",
+    shortName: "トワ",
     dream: 18776053,
     diamond: 3580071,
     platinum: 1987407
@@ -85,7 +85,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 11,
     name: "カエラ・コヴァルスキア",
-    shortName: "",
+    shortName: "カエラ",
     dream: 5733661,
     diamond: 2059108,
     platinum: 1287275
@@ -93,7 +93,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 12,
     name: "獅白ぼたん",
-    shortName: "",
+    shortName: "ぼたん",
     dream: 11573800,
     diamond: 2825078,
     platinum: 1640628
@@ -101,7 +101,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 13,
     name: "古石ビジュー",
-    shortName: "",
+    shortName: "ビジュー",
     dream: 11262651,
     diamond: 2496480,
     platinum: 1476615
@@ -109,7 +109,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 14,
     name: "ロボ子さん",
-    shortName: "",
+    shortName: "ロボ子",
     dream: 10643974,
     diamond: 2793408,
     platinum: 1684833
@@ -117,7 +117,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 15,
     name: "兎田ぺこら",
-    shortName: "",
+    shortName: "ぺこら",
     dream: 42099169,
     diamond: 4044248,
     platinum: 1922678

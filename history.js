@@ -71,9 +71,8 @@
         name: record.name.trim(),
         shortName: selectedEvent === "spotlight"
           && typeof record.shortName === "string"
-          && record.shortName.trim() !== ""
             ? record.shortName.trim()
-            : record.name.trim(),
+            : "",
         points,
         sourceIndex: index
       });
@@ -138,7 +137,61 @@
     shortName.textContent = record.shortName;
 
     name.append(fullName, shortName);
+    updateMobileSpotlightName(name, record);
     return name;
+  }
+
+  function getTextWidth(text, font) {
+    const canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+    const context = canvas.getContext("2d");
+    context.font = font;
+    return context.measureText(text).width;
+  }
+
+  function updateMobileSpotlightName(container, record) {
+    if (!window.matchMedia("(max-width: 520px)").matches) {
+      container.classList.remove("is-mobile-full", "is-mobile-short", "is-mobile-shrunk");
+      container.style.removeProperty("--mobile-name-size");
+      return;
+    }
+
+    const applyMobileName = () => {
+      const fullName = container.querySelector(".history-name-full");
+      const shortName = container.querySelector(".history-name-short");
+      if (!fullName || !shortName) return;
+
+      container.classList.remove("is-mobile-full", "is-mobile-short", "is-mobile-shrunk");
+      container.style.removeProperty("--mobile-name-size");
+      const availableWidth = container.clientWidth;
+      if (availableWidth <= 0) return;
+
+      const normalSize = Math.max(11.5, parseFloat(getComputedStyle(container).fontSize) || 11.5);
+      const font = `${normalSize}px ${getComputedStyle(container).fontFamily}`;
+      const fullWidth = getTextWidth(record.name, font);
+
+      if (fullWidth <= availableWidth) {
+        container.classList.add("is-mobile-full");
+        fullName.textContent = record.name;
+        return;
+      }
+
+      if (record.shortName) {
+        container.classList.add("is-mobile-short");
+        shortName.textContent = record.shortName;
+        return;
+      }
+
+      let fittedSize = normalSize;
+      while (fittedSize > 10
+        && getTextWidth(record.name, `${fittedSize}px ${getComputedStyle(container).fontFamily}`) > availableWidth) {
+        fittedSize -= 0.5;
+      }
+      container.classList.add("is-mobile-shrunk");
+      container.style.setProperty("--mobile-name-size", `${fittedSize}px`);
+      fullName.textContent = record.name;
+    };
+
+    requestAnimationFrame(applyMobileName);
   }
 
   function createSpotlightCharacter(record, rank) {
@@ -179,6 +232,19 @@
     return row;
   }
 
+  function createMobileSpotlightRow(record, rank) {
+    const row = document.createElement("tr");
+    row.className = "history-ranking-row history-spotlight-row history-spotlight-mobile-row";
+
+    const cell = document.createElement("td");
+    cell.colSpan = 3;
+    cell.className = "history-spotlight-mobile";
+    cell.appendChild(createSpotlightCharacter(record, rank));
+
+    row.appendChild(cell);
+    return row;
+  }
+
   function render() {
     updateEventTabs();
 
@@ -194,8 +260,15 @@
     const sortedRecords = sortRecords(records, sortSelect.value);
     const rows = document.createDocumentFragment();
     if (selectedEvent === "spotlight") {
-      for (let index = 0; index < sortedRecords.length; index += 2) {
-        rows.appendChild(createSpotlightPairRow(sortedRecords, index, sortSelect.value));
+      if (window.matchMedia("(max-width: 520px)").matches) {
+        sortedRecords.forEach((record, index) => {
+          const rank = sortSelect.value === "order" ? record.order : index + 1;
+          rows.appendChild(createMobileSpotlightRow(record, rank));
+        });
+      } else {
+        for (let index = 0; index < sortedRecords.length; index += 2) {
+          rows.appendChild(createSpotlightPairRow(sortedRecords, index, sortSelect.value));
+        }
       }
     } else {
       sortedRecords.forEach((record, index) => {
@@ -208,6 +281,15 @@
     table.classList.toggle("is-rally", selectedEvent === "rally");
     rankingList.replaceChildren(rows);
     emptyMessage.hidden = sortedRecords.length > 0;
+
+    if (selectedEvent === "spotlight") {
+      const applyNames = () => {
+        rankingList.querySelectorAll(".history-character-name").forEach((name, index) => {
+          updateMobileSpotlightName(name, sortedRecords[index]);
+        });
+      };
+      requestAnimationFrame(applyNames);
+    }
   }
 
   eventTabs.forEach((tab) => {
@@ -222,6 +304,15 @@
     render();
   });
   sortSelect.addEventListener("change", render);
+  window.matchMedia("(max-width: 520px)").addEventListener("change", render);
+  window.addEventListener("resize", () => {
+    rankingList.querySelectorAll(".history-character-name").forEach((name) => {
+      updateMobileSpotlightName(name, {
+        name: name.title,
+        shortName: name.querySelector(".history-name-short")?.textContent || ""
+      });
+    });
+  });
 
   loadTheme();
   render();
