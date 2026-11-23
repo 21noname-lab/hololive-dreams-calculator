@@ -109,7 +109,7 @@ window.SPOTLIGHT_DATA = [
      {
     order: 14,
     name: "ロボ子さん",
-    shortName: "ロボ子",
+    shortName: "",
     dream: 10643974,
     diamond: 2793408,
     platinum: 1684833
@@ -129,5 +129,13 @@ window.SPOTLIGHT_DATA = [
     dream: 7716859,
     diamond: 2206156,
     platinum: 1341777
+  },
+    {
+    order: 17,
+    name: "桃鈴ねね",
+    shortName: "ねね",
+    dream: 19822466,
+    diamond: 2962322,
+    platinum: 1634565
   },
 ];
