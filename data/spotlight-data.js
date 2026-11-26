@@ -138,4 +138,12 @@ window.SPOTLIGHT_DATA = [
     diamond: 2962322,
     platinum: 1634565
   },
+  {
+    order: 18,
+    name: "パヴォリア・レイネ",
+    shortName: "レイネ",
+    dream: 5389476,
+    diamond: 2142706,
+    platinum: 1329048
+  },
 ];
